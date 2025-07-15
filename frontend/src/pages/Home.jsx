@@ -1,4 +1,5 @@
 import Navbar from '../components/Navbar';
+
 import footer from '../components/footer';
 
 const Home=()=>(
@@ -8,7 +9,10 @@ const Home=()=>(
             <h1>Welcome to CeyHarvest</h1>
             <p>Connecting rural farmers to smart markets</p>
         </main>
-        <Footer />
+        <footer>
+
+        </footer>
+
     </>
 );
 export default Home;

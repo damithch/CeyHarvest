@@ -1,4 +1,4 @@
-import {link} from 'react-router-dom';
+import {Link} from 'react-router-dom';
 
 const Navbar=()=>(
     <nav style={{ background: '#228B22', padding: '1rem', color: 'white' }}>
