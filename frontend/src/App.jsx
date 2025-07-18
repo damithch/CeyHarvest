@@ -1,16 +1,23 @@
-import {Routes,Route} from 'react-router-dom';
-import Home from'./pages/Home';
-import Login from'./pages/Login';
-import Register from'./pages/Register';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import FarmerLogin from './FarmerLogin';
 
-function App(){
-    return(
-        <Routes>
-            <Route path="/" element={<Home/>}/>
-            <Route path="/login" element={<Login/>}/>
-            <Route path="/register" element={<Register/>}/>
-        </Routes>
-    );
+const Dashboard = () => (
+  <div style={{ maxWidth: 600, margin: '2rem auto', padding: 20 }}>
+    <h2>Farmer Dashboard</h2>
+    <p>Welcome! You are logged in as a farmer.</p>
+  </div>
+);
+
+function App() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<FarmerLogin />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+      </Routes>
+    </Router>
+  );
 }
-export default App;
 
+export default App;
