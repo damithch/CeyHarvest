@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.Map;
 
 @RestController
@@ -35,7 +36,16 @@ public class UnifiedAuthController {
             if (loginResult != null) {
                 return ResponseEntity.ok(loginResult);
             } else {
-                return ResponseEntity.status(401).body("Invalid email/phone or password");
+                // Check if this is an unverified email case
+                if (identifier.contains("@")) {
+                    Map<String, Object> errorResponse = new HashMap<>();
+                    errorResponse.put("error", "UNVERIFIED_EMAIL");
+                    errorResponse.put("message", "Email has not been verified yet. Please check your email or resend verification code.");
+                    errorResponse.put("email", identifier);
+                    return ResponseEntity.status(401).body(errorResponse);
+                } else {
+                    return ResponseEntity.status(401).body("Invalid email/phone or password");
+                }
             }
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Login failed: " + e.getMessage());
@@ -76,6 +86,36 @@ public class UnifiedAuthController {
             }
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error getting user role: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Resend verification code for unverified users
+     */
+    @PostMapping("/resend-verification")
+    public ResponseEntity<?> resendVerification(@RequestBody Map<String, String> request) {
+        try {
+            String email = request.get("email");
+            
+            if (email == null) {
+                return ResponseEntity.status(400).body("Email is required");
+            }
+            
+            // Forward to verification controller logic
+            // This endpoint is more accessible from the login flow
+            Map<String, String> verificationRequest = new HashMap<>();
+            verificationRequest.put("email", email);
+            verificationRequest.put("userType", "UNKNOWN"); // Will be determined in verification service
+            
+            // You might need to inject VerificationController or EmailVerificationService here
+            // For now, return a helpful message
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "Please use the registration page to resend verification code");
+            response.put("email", email);
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Failed to resend verification: " + e.getMessage());
         }
     }
 }

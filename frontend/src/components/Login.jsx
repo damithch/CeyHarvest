@@ -9,6 +9,9 @@ const Login = () => {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showResendOption, setShowResendOption] = useState(false);
+  const [resendEmail, setResendEmail] = useState('');
+  const [resendMessage, setResendMessage] = useState('');
   const navigate = useNavigate();
   const { login } = useAuth();
 
@@ -19,12 +22,37 @@ const Login = () => {
     });
   };
 
+  const handleResendVerification = async () => {
+    setResendMessage('Sending...');
+    try {
+      const response = await fetch('/api/verification/resend-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: resendEmail,
+          userType: 'UNKNOWN' // Will be determined by the service
+        }),
+      });
+
+      if (response.ok) {
+        setResendMessage('Verification code sent! Please check your email.');
+      } else {
+        const errorMsg = await response.text();
+        setResendMessage(`Failed to send: ${errorMsg}`);
+      }
+    } catch (err) {
+      setResendMessage('Network error. Please try again.');
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
     try {
+      console.log('Attempting login with:', { identifier: formData.identifier });
+      
       // Use unified login endpoint that accepts email or phone
       const response = await fetch('/api/auth/login', {
         method: 'POST',
@@ -35,16 +63,36 @@ const Login = () => {
         }),
       });
 
+      console.log('Login response status:', response.status);
+      console.log('Login response URL:', response.url);
+
       if (response.ok) {
         const responseData = await response.json();
+        console.log('Login successful:', responseData);
         const userRole = responseData.role;
         login(responseData, userRole);
         navigate('/dashboard');
       } else {
-        const errorMsg = await response.text();
-        setError(errorMsg || 'Invalid email/phone or password');
+        const errorData = await response.text();
+        console.error('Login error:', errorData);
+        
+        // Try to parse as JSON to check for unverified email
+        try {
+          const errorJson = JSON.parse(errorData);
+          if (errorJson.error === 'UNVERIFIED_EMAIL') {
+            setShowResendOption(true);
+            setResendEmail(errorJson.email);
+            setError(errorJson.message);
+          } else {
+            setError(errorJson.message || 'Invalid email/phone or password');
+          }
+        } catch {
+          // Not JSON, treat as plain text error
+          setError(errorData || 'Invalid email/phone or password');
+        }
       }
     } catch (err) {
+      console.error('Login network error:', err);
       setError('Network error. Please try again.');
     } finally {
       setLoading(false);
@@ -104,6 +152,34 @@ const Login = () => {
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded">
               {error}
+            </div>
+          )}
+
+          {showResendOption && (
+            <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded">
+              <div className="flex flex-col space-y-2">
+                <p className="text-sm">
+                  Your email <strong>{resendEmail}</strong> is not verified yet.
+                </p>
+                <div className="flex items-center space-x-2">
+                  <button
+                    type="button"
+                    onClick={handleResendVerification}
+                    className="text-sm bg-yellow-600 text-white px-3 py-1 rounded hover:bg-yellow-700 transition duration-200"
+                  >
+                    Resend Verification Code
+                  </button>
+                  <Link
+                    to="/register"
+                    className="text-sm text-blue-600 hover:text-blue-500 underline"
+                  >
+                    Go to Registration
+                  </Link>
+                </div>
+                {resendMessage && (
+                  <p className="text-sm mt-2 text-gray-700">{resendMessage}</p>
+                )}
+              </div>
             </div>
           )}
 
