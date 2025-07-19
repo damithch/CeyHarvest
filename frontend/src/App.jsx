@@ -10,6 +10,7 @@ import ResetPassword from './components/ResetPassword';
 import AdminDashboard from './components/AdminDashboard';
 import FarmerDashboard from './components/FarmerDashboard';
 import BuyerDashboard from './components/BuyerDashboard';
+import DriverDashboard from './components/DriverDashboard';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -21,6 +22,8 @@ const Dashboard = () => {
       return <FarmerDashboard />;
     case 'BUYER':
       return <BuyerDashboard />;
+    case 'DRIVER':
+      return <DriverDashboard />;
     default:
       return <Navigate to="/login" replace />;
   }

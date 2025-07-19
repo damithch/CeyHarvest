@@ -116,7 +116,7 @@ const BuyerDashboard = () => {
           />
           <StatCard
             title="Total Spent"
-            value={`$${stats.totalSpent}`}
+            value={`LKR ${stats.totalSpent}`}
             icon="💰"
             color="text-green-600"
           />
@@ -203,7 +203,7 @@ const BuyerDashboard = () => {
                   </p>
                   <div className="flex items-center justify-between">
                     <span className="text-lg font-bold text-green-600">
-                      ${product.price}
+                      LKR {product.price}
                     </span>
                     <button className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">
                       Add to Cart
@@ -240,7 +240,7 @@ const BuyerDashboard = () => {
                           Order #{order.id}
                         </div>
                         <div className="text-sm text-gray-500">
-                          {order.productName} | Qty: {order.quantity} | Total: ${order.total}
+                          {order.productName} | Qty: {order.quantity} | Total: LKR {order.total}
                         </div>
                       </div>
                     </div>

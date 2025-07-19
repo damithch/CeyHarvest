@@ -239,7 +239,8 @@ const EnhancedRegister = () => {
         body: JSON.stringify({
           email: registrationEmail,
           code: verificationCode,
-          name: `${formData.firstName} ${formData.lastName}`.trim() || formData.username
+          name: `${formData.firstName} ${formData.lastName}`.trim() || formData.username,
+          userType: registrationUserType
         }),
       });
 
