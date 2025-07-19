@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import DashboardLayout from '../components/DashboardLayout';
+import ProfileSettings from '../components/ProfileSettings';
 
 const BuyerDashboard = () => {
   const { user, getAuthHeaders } = useAuth();
+  const [currentView, setCurrentView] = useState('dashboard');
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
   const [stats, setStats] = useState({
@@ -96,6 +98,11 @@ const BuyerDashboard = () => {
     </div>
   );
 
+  // Render different views based on currentView state
+  if (currentView === 'profile') {
+    return <ProfileSettings onBack={() => setCurrentView('dashboard')} />;
+  }
+
   return (
     <DashboardLayout title="Buyer Dashboard">
       <div className="space-y-6">
@@ -147,13 +154,22 @@ const BuyerDashboard = () => {
           <div className="bg-white p-6 rounded-lg shadow">
             <h3 className="text-lg font-medium text-gray-900 mb-4">My Account</h3>
             <div className="space-y-3">
-              <button className="w-full bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700">
+              <button 
+                onClick={() => setCurrentView('orders')}
+                className="w-full bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700"
+              >
                 My Orders
               </button>
-              <button className="w-full bg-pink-600 text-white px-4 py-2 rounded hover:bg-pink-700">
+              <button 
+                onClick={() => setCurrentView('favorites')}
+                className="w-full bg-pink-600 text-white px-4 py-2 rounded hover:bg-pink-700"
+              >
                 Favorites
               </button>
-              <button className="w-full bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">
+              <button 
+                onClick={() => setCurrentView('profile')}
+                className="w-full bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700"
+              >
                 Profile Settings
               </button>
             </div>
