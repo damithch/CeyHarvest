@@ -18,17 +18,24 @@ public class UnifiedAuthController {
 
     /**
      * Unified login endpoint that works for all user types
-     * No need to specify role - system detects it automatically
+     * Accepts both email and phone number as identifier
      */
     @PostMapping("/login")
-    public ResponseEntity<?> unifiedLogin(@Valid @RequestBody SecureLoginDTO dto) {
+    public ResponseEntity<?> unifiedLogin(@RequestBody Map<String, String> loginData) {
         try {
-            Map<String, Object> loginResult = unifiedAuthService.attemptLogin(dto.getEmail(), dto.getPassword());
+            String identifier = loginData.get("identifier"); // Can be email or phone
+            String password = loginData.get("password");
+            
+            if (identifier == null || password == null) {
+                return ResponseEntity.status(400).body("Identifier and password are required");
+            }
+            
+            Map<String, Object> loginResult = unifiedAuthService.attemptLoginWithIdentifier(identifier, password);
             
             if (loginResult != null) {
                 return ResponseEntity.ok(loginResult);
             } else {
-                return ResponseEntity.status(401).body("Invalid email or password");
+                return ResponseEntity.status(401).body("Invalid email/phone or password");
             }
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Login failed: " + e.getMessage());

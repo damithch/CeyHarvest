@@ -52,6 +52,9 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/reset-password").permitAll()
                 .requestMatchers("/api/auth/verify-reset-token/**").permitAll()
                 
+                // Verification endpoints (public) - for email/SMS verification during registration
+                .requestMatchers("/api/verification/**").permitAll()
+                
                 // Temporary password reset endpoint (REMOVE IN PRODUCTION)
                 .requestMatchers("/api/admin/reset/**").permitAll()
                 
@@ -89,7 +92,8 @@ public class SecurityConfig {
             "http://127.0.0.1:*",
             "http://localhost:3000",
             "http://localhost:5173",
-            "http://localhost:5174"
+            "http://localhost:5174",
+            "http://localhost:5175"
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));

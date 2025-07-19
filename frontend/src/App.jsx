@@ -4,7 +4,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Welcome from './components/Welcome';
 import Login from './components/Login';
-import Register from './components/Register';
+import EnhancedRegister from './components/EnhancedRegister';
 import ForgotPassword from './ForgotPassword';
 import ResetPassword from './components/ResetPassword';
 import AdminDashboard from './components/AdminDashboard';
@@ -33,7 +33,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Welcome />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+          <Route path="/register" element={<EnhancedRegister />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route 

@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 const Login = () => {
   const [formData, setFormData] = useState({
-    email: '',
+    identifier: '', // Can be email or phone number
     password: ''
   });
   const [error, setError] = useState('');
@@ -25,12 +25,12 @@ const Login = () => {
     setLoading(true);
 
     try {
-      // Use unified login endpoint
+      // Use unified login endpoint that accepts email or phone
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email: formData.email,
+          identifier: formData.identifier, // Can be email or phone
           password: formData.password
         }),
       });
@@ -42,7 +42,7 @@ const Login = () => {
         navigate('/dashboard');
       } else {
         const errorMsg = await response.text();
-        setError(errorMsg || 'Invalid email or password');
+        setError(errorMsg || 'Invalid email/phone or password');
       }
     } catch (err) {
       setError('Network error. Please try again.');
@@ -69,18 +69,18 @@ const Login = () => {
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                Email Address
+              <label htmlFor="identifier" className="block text-sm font-medium text-gray-700 mb-1">
+                Email or Phone Number
               </label>
               <input
-                id="email"
-                name="email"
-                type="email"
+                id="identifier"
+                name="identifier"
+                type="text"
                 required
-                value={formData.email}
+                value={formData.identifier}
                 onChange={handleChange}
                 className="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
-                placeholder="Enter your email address"
+                placeholder="Enter your email or phone number"
               />
             </div>
 
@@ -148,15 +148,14 @@ const Login = () => {
           {/* Features Info */}
           <div className="mt-6 bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-md p-4">
             <div className="text-xs text-gray-700">
-              <p className="font-medium mb-2 text-green-700">🌾 One Account, Multiple Possibilities</p>
+              <p className="font-medium mb-2 text-green-700">🌾 Connect & Trade Fresh Produce</p>
               <div className="grid grid-cols-1 gap-2">
-                <p>• <strong>Farmers:</strong> Manage crops and sales</p>
-                <p>• <strong>Buyers:</strong> Purchase fresh produce</p>
-                <p>• <strong>Drivers:</strong> Handle deliveries</p>
-                <p>• <strong>Admins:</strong> Platform management</p>
+                <p>• <strong>Farmers:</strong> Sell your harvest directly</p>
+                <p>• <strong>Buyers:</strong> Source fresh, quality produce</p>
+                <p>• <strong>Drivers:</strong> Efficient delivery services</p>
               </div>
               <p className="mt-2 text-green-600 font-medium">
-                Login with any valid email - no special format required!
+                Join Sri Lanka's premier agricultural marketplace!
               </p>
             </div>
           </div>

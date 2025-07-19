@@ -17,4 +17,10 @@ public class Driver {
     private String password;
     private String email;
     private String role = "DRIVER";
+    private String phoneNumber;
+    private String firstName;
+    private String lastName;
+    private String address;
+    private String city;
+    private String postalCode;
 } 

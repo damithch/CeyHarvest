@@ -21,7 +21,7 @@ public class EmailService {
     /**
      * Send password reset email to user
      * @param toEmail The recipient email address
-     * @param resetToken The password reset token
+     * @param resetToken The 6-digit password reset code
      * @param username The username for personalization
      */
     public void sendPasswordResetEmail(String toEmail, String resetToken, String username) {
@@ -29,32 +29,32 @@ public class EmailService {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(fromEmail);
             message.setTo(toEmail);
-            message.setSubject("🌱 CeyHarvest Password Reset Request");
+            message.setSubject("🌱 CeyHarvest Password Reset Code");
             
             String resetLink = frontendUrl + "/reset-password?token=" + resetToken;
             
             String emailBody = String.format(
                 "Dear %s,\n\n" +
                 "You have requested to reset your password for your CeyHarvest account.\n\n" +
-                "Please click the link below to reset your password:\n" +
+                "Your 6-digit password reset code is: %s\n\n" +
+                "Alternatively, you can click the link below to reset your password:\n" +
                 "%s\n\n" +
-                "Or use this reset token in the password reset form: %s\n\n" +
-                "This link will expire in 1 hour for security reasons.\n\n" +
+                "This code will expire in 15 minutes for security reasons.\n\n" +
                 "If you did not request this password reset, please ignore this email and your password will remain unchanged.\n\n" +
                 "Best regards,\n" +
                 "The CeyHarvest Team\n\n" +
                 "---\n" +
                 "This is an automated message, please do not reply to this email.",
                 username,
-                resetLink,
-                resetToken
+                resetToken,
+                resetLink
             );
             
             message.setText(emailBody);
             
             mailSender.send(message);
             
-            System.out.println("Password reset email sent successfully to: " + toEmail);
+            System.out.println("Password reset code sent successfully to: " + toEmail);
             
         } catch (Exception e) {
             System.err.println("Failed to send password reset email to " + toEmail + ": " + e.getMessage());
@@ -125,6 +125,28 @@ public class EmailService {
         } catch (Exception e) {
             System.err.println("Email service test failed: " + e.getMessage());
             return false;
+        }
+    }
+
+    /**
+     * Generic method to send email
+     * @param toEmail The recipient email address
+     * @param subject The email subject
+     * @param body The email body content
+     */
+    public void sendEmail(String toEmail, String subject, String body) {
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromEmail);
+            message.setTo(toEmail);
+            message.setSubject(subject);
+            message.setText(body);
+            
+            mailSender.send(message);
+            System.out.println("Email sent successfully to: " + toEmail);
+        } catch (Exception e) {
+            System.err.println("Failed to send email to " + toEmail + ": " + e.getMessage());
+            throw new RuntimeException("Failed to send email", e);
         }
     }
 }

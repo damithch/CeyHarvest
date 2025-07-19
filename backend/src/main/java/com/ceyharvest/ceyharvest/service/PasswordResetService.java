@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
-import java.util.UUID;
+import java.util.Random;
 
 @Service
 public class PasswordResetService {
@@ -34,9 +34,10 @@ public class PasswordResetService {
         // Invalidate any existing tokens for this email
         tokenRepository.deleteByEmail(email);
 
-        // Generate new token
-        String token = UUID.randomUUID().toString();
-        LocalDateTime expiryDate = LocalDateTime.now().plusHours(1); // 1 hour expiry
+        // Generate new 6-digit numeric code
+        Random random = new Random();
+        String token = String.format("%06d", random.nextInt(1000000)); // Generates 000000 to 999999
+        LocalDateTime expiryDate = LocalDateTime.now().plusMinutes(15); // 15 minutes expiry for security
 
         PasswordResetToken resetToken = new PasswordResetToken(email, token, expiryDate);
         tokenRepository.save(resetToken);

@@ -33,17 +33,78 @@ public class UserAuthController {
     private PasswordEncoder passwordEncoder;
     @Autowired
     private AdminSecurityConfig adminSecurityConfig;
+    
+    // Helper method to check for duplicate email or phone
+    private ResponseEntity<?> checkForDuplicates(String email, String phoneNumber) {
+        // Check email duplicates across all user types
+        if (email != null && !email.isEmpty()) {
+            if (farmerRepository.findByEmail(email).isPresent()) {
+                return ResponseEntity.status(409).body("Email already registered as farmer");
+            }
+            if (buyerRepository.findByEmail(email).isPresent()) {
+                return ResponseEntity.status(409).body("Email already registered as buyer");
+            }
+            if (driverRepository.findByEmail(email).isPresent()) {
+                return ResponseEntity.status(409).body("Email already registered as driver");
+            }
+            if (adminRepository.findByEmail(email).isPresent()) {
+                return ResponseEntity.status(409).body("Email already registered as admin");
+            }
+        }
+        
+        // Check phone number duplicates across all user types (if phone number provided)
+        if (phoneNumber != null && !phoneNumber.isEmpty()) {
+            if (farmerRepository.findByPhoneNumber(phoneNumber).isPresent()) {
+                return ResponseEntity.status(409).body("Phone number already registered as farmer");
+            }
+            if (buyerRepository.findByPhoneNumber(phoneNumber).isPresent()) {
+                return ResponseEntity.status(409).body("Phone number already registered as buyer");
+            }
+            if (driverRepository.findByPhoneNumber(phoneNumber).isPresent()) {
+                return ResponseEntity.status(409).body("Phone number already registered as driver");
+            }
+        }
+        
+        return null; // No duplicates found
+    }
 
     // Farmer Registration
     @PostMapping("/farmer/register")
     public ResponseEntity<?> registerFarmer(@Valid @RequestBody SecureRegisterDTO dto) {
-        if (farmerRepository.findByEmail(dto.getEmail()).isPresent()) {
-            return ResponseEntity.badRequest().body("Farmer already exists");
+        // Check for duplicate email or phone number
+        ResponseEntity<?> duplicateCheck = checkForDuplicates(dto.getEmail(), dto.getPhoneNumber());
+        if (duplicateCheck != null) {
+            return duplicateCheck;
         }
         
         // Encrypt password before saving
         String hashedPassword = passwordEncoder.encode(dto.getPassword());
-        Farmer farmer = new Farmer(null, dto.getUsername(), hashedPassword, dto.getEmail(), "FARMER");
+        Farmer farmer = new Farmer();
+        farmer.setUsername(dto.getUsername());
+        farmer.setPassword(hashedPassword);
+        farmer.setEmail(dto.getEmail());
+        farmer.setRole("FARMER");
+        
+        // Set additional fields if provided
+        if (dto.getPhoneNumber() != null && !dto.getPhoneNumber().isEmpty()) {
+            farmer.setPhoneNumber(dto.getPhoneNumber());
+        }
+        if (dto.getFirstName() != null && !dto.getFirstName().isEmpty()) {
+            farmer.setFirstName(dto.getFirstName());
+        }
+        if (dto.getLastName() != null && !dto.getLastName().isEmpty()) {
+            farmer.setLastName(dto.getLastName());
+        }
+        if (dto.getAddress() != null && !dto.getAddress().isEmpty()) {
+            farmer.setAddress(dto.getAddress());
+        }
+        if (dto.getCity() != null && !dto.getCity().isEmpty()) {
+            farmer.setCity(dto.getCity());
+        }
+        if (dto.getPostalCode() != null && !dto.getPostalCode().isEmpty()) {
+            farmer.setPostalCode(dto.getPostalCode());
+        }
+        
         farmerRepository.save(farmer);
         
         // Generate JWT token
@@ -82,16 +143,24 @@ public class UserAuthController {
     // Buyer Registration
     @PostMapping("/buyer/register")
     public ResponseEntity<?> registerBuyer(@Valid @RequestBody SecureRegisterDTO dto) {
-        if (buyerRepository.findByEmail(dto.getEmail()).isPresent()) {
-            return ResponseEntity.badRequest().body("Buyer already exists");
+        // Check for duplicate email or phone number
+        ResponseEntity<?> duplicateCheck = checkForDuplicates(dto.getEmail(), dto.getPhoneNumber());
+        if (duplicateCheck != null) {
+            return duplicateCheck;
         }
         
         // Encrypt password before saving
         String hashedPassword = passwordEncoder.encode(dto.getPassword());
         Buyer buyer = new Buyer();
         buyer.setUsername(dto.getUsername());
-        buyer.setPassword(hashedPassword);
+        buyer.setFirstName(dto.getFirstName());
+        buyer.setLastName(dto.getLastName());
         buyer.setEmail(dto.getEmail());
+        buyer.setPhoneNumber(dto.getPhoneNumber());
+        buyer.setAddress(dto.getAddress());
+        buyer.setCity(dto.getCity());
+        buyer.setPostalCode(dto.getPostalCode());
+        buyer.setPassword(hashedPassword);
         buyer.setRole("BUYER");
         buyer.setCreatedAt(LocalDateTime.now());
         buyer.setUpdatedAt(LocalDateTime.now());
@@ -133,13 +202,40 @@ public class UserAuthController {
     // Driver Registration
     @PostMapping("/driver/register")
     public ResponseEntity<?> registerDriver(@Valid @RequestBody SecureRegisterDTO dto) {
-        if (driverRepository.findByEmail(dto.getEmail()).isPresent()) {
-            return ResponseEntity.badRequest().body("Driver already exists");
+        // Check for duplicate email or phone number
+        ResponseEntity<?> duplicateCheck = checkForDuplicates(dto.getEmail(), dto.getPhoneNumber());
+        if (duplicateCheck != null) {
+            return duplicateCheck;
         }
         
         // Encrypt password before saving
         String hashedPassword = passwordEncoder.encode(dto.getPassword());
-        Driver driver = new Driver(null, dto.getUsername(), hashedPassword, dto.getEmail(), "DRIVER");
+        Driver driver = new Driver();
+        driver.setUsername(dto.getUsername());
+        driver.setPassword(hashedPassword);
+        driver.setEmail(dto.getEmail());
+        driver.setRole("DRIVER");
+        
+        // Set additional fields if provided
+        if (dto.getPhoneNumber() != null && !dto.getPhoneNumber().isEmpty()) {
+            driver.setPhoneNumber(dto.getPhoneNumber());
+        }
+        if (dto.getFirstName() != null && !dto.getFirstName().isEmpty()) {
+            driver.setFirstName(dto.getFirstName());
+        }
+        if (dto.getLastName() != null && !dto.getLastName().isEmpty()) {
+            driver.setLastName(dto.getLastName());
+        }
+        if (dto.getAddress() != null && !dto.getAddress().isEmpty()) {
+            driver.setAddress(dto.getAddress());
+        }
+        if (dto.getCity() != null && !dto.getCity().isEmpty()) {
+            driver.setCity(dto.getCity());
+        }
+        if (dto.getPostalCode() != null && !dto.getPostalCode().isEmpty()) {
+            driver.setPostalCode(dto.getPostalCode());
+        }
+        
         driverRepository.save(driver);
         
         // Generate JWT token
