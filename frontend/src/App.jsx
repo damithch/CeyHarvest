@@ -2,11 +2,14 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import Welcome from './components/Welcome';
 import Login from './components/Login';
+import Register from './components/Register';
+import ForgotPassword from './ForgotPassword';
+import ResetPassword from './components/ResetPassword';
 import AdminDashboard from './components/AdminDashboard';
 import FarmerDashboard from './components/FarmerDashboard';
 import BuyerDashboard from './components/BuyerDashboard';
-import Unauthorized from './components/Unauthorized';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -28,8 +31,11 @@ function App() {
     <AuthProvider>
       <Router>
         <Routes>
+          <Route path="/" element={<Welcome />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/unauthorized" element={<Unauthorized />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route 
             path="/dashboard" 
             element={
@@ -38,31 +44,7 @@ function App() {
               </ProtectedRoute>
             } 
           />
-          <Route 
-            path="/admin/*" 
-            element={
-              <ProtectedRoute allowedRoles={['ADMIN']}>
-                <AdminDashboard />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/farmer/*" 
-            element={
-              <ProtectedRoute allowedRoles={['FARMER']}>
-                <FarmerDashboard />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/buyer/*" 
-            element={
-              <ProtectedRoute allowedRoles={['BUYER']}>
-                <BuyerDashboard />
-              </ProtectedRoute>
-            } 
-          />
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="*" element={<div style={{padding: '20px'}}>Page not found - but router is working!</div>} />
         </Routes>
       </Router>
     </AuthProvider>
