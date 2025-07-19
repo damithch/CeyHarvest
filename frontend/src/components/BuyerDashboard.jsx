@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 import DashboardLayout from '../components/DashboardLayout';
 
 const BuyerDashboard = () => {
+  const { user, getAuthHeaders } = useAuth();
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
   const [stats, setStats] = useState({
@@ -12,14 +14,22 @@ const BuyerDashboard = () => {
   });
 
   useEffect(() => {
-    fetchProducts();
-    fetchOrders();
-    fetchStats();
-  }, []);
+    if (user && user.id) {
+      fetchProducts();
+      fetchOrders();
+      fetchStats();
+    }
+  }, [user]);
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch('/api/buyer/products');
+      // For buyers, we can use any identifier since they see all products
+      const response = await fetch(`/api/buyer/${user.email}/products`, {
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeaders()
+        }
+      });
       if (response.ok) {
         const data = await response.json();
         setProducts(data);
@@ -31,7 +41,13 @@ const BuyerDashboard = () => {
 
   const fetchOrders = async () => {
     try {
-      const response = await fetch('/api/buyer/orders');
+      // Use email for buyer orders since Order.customerEmail is used
+      const response = await fetch(`/api/buyer/${user.email}/orders`, {
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeaders()
+        }
+      });
       if (response.ok) {
         const data = await response.json();
         setOrders(data);
@@ -43,7 +59,12 @@ const BuyerDashboard = () => {
 
   const fetchStats = async () => {
     try {
-      const response = await fetch('/api/buyer/stats');
+      const response = await fetch(`/api/buyer/${user.email}/stats`, {
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeaders()
+        }
+      });
       if (response.ok) {
         const data = await response.json();
         setStats(data);

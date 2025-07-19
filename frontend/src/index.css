@@ -1,12 +1,1 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-/* OPTIONAL: Custom base styles if you want */
-body {
-  @apply bg-white text-gray-800 font-sans;
-}
-
-a {
-  @apply text-blue-600 hover:underline;
-}
+@import "tailwindcss";

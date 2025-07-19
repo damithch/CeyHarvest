@@ -12,14 +12,20 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // Check if user is logged in on app start
     const checkAuth = () => {
+      const storedToken = localStorage.getItem('token');
       const adminData = localStorage.getItem('admin');
       const farmerData = localStorage.getItem('farmer');
       const buyerData = localStorage.getItem('buyer');
+
+      if (storedToken) {
+        setToken(storedToken);
+      }
 
       if (adminData) {
         setUser({ ...JSON.parse(adminData), role: 'ADMIN' });
@@ -34,27 +40,40 @@ export const AuthProvider = ({ children }) => {
     checkAuth();
   }, []);
 
-  const login = (userData, role) => {
+  const login = (response, role) => {
+    const { token: jwtToken, user: userData } = response;
     const userWithRole = { ...userData, role };
-    setUser(userWithRole);
     
-    // Store in appropriate localStorage key
+    setUser(userWithRole);
+    setToken(jwtToken);
+    
+    // Store JWT token and user data
+    localStorage.setItem('token', jwtToken);
     localStorage.setItem(role.toLowerCase(), JSON.stringify(userData));
   };
 
   const logout = () => {
     setUser(null);
+    setToken(null);
+    localStorage.removeItem('token');
     localStorage.removeItem('admin');
     localStorage.removeItem('farmer');
     localStorage.removeItem('buyer');
   };
 
+  // Function to get authorization headers for API calls
+  const getAuthHeaders = () => {
+    return token ? { 'Authorization': `Bearer ${token}` } : {};
+  };
+
   const value = {
     user,
+    token,
     login,
     logout,
     loading,
-    isAuthenticated: !!user,
+    getAuthHeaders,
+    isAuthenticated: !!user && !!token,
     isAdmin: user?.role === 'ADMIN',
     isFarmer: user?.role === 'FARMER',
     isBuyer: user?.role === 'BUYER'

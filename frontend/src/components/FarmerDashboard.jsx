@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 import DashboardLayout from '../components/DashboardLayout';
 
 const FarmerDashboard = () => {
+  const { user, getAuthHeaders } = useAuth();
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
   const [stats, setStats] = useState({
@@ -12,14 +14,21 @@ const FarmerDashboard = () => {
   });
 
   useEffect(() => {
-    fetchProducts();
-    fetchOrders();
-    fetchStats();
-  }, []);
+    if (user && user.id) {
+      fetchProducts();
+      fetchOrders();
+      fetchStats();
+    }
+  }, [user]);
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch('/api/farmer/products');
+      const response = await fetch(`/api/farmer/${user.id}/products`, {
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeaders()
+        }
+      });
       if (response.ok) {
         const data = await response.json();
         setProducts(data);
@@ -31,7 +40,12 @@ const FarmerDashboard = () => {
 
   const fetchOrders = async () => {
     try {
-      const response = await fetch('/api/farmer/orders');
+      const response = await fetch(`/api/farmer/${user.id}/orders`, {
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeaders()
+        }
+      });
       if (response.ok) {
         const data = await response.json();
         setOrders(data);
@@ -43,7 +57,12 @@ const FarmerDashboard = () => {
 
   const fetchStats = async () => {
     try {
-      const response = await fetch('/api/farmer/stats');
+      const response = await fetch(`/api/farmer/${user.id}/stats`, {
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeaders()
+        }
+      });
       if (response.ok) {
         const data = await response.json();
         setStats(data);
