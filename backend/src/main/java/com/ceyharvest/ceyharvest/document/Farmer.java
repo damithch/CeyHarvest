@@ -17,4 +17,10 @@ public class Farmer {
     private String password;
     private String email;
     private String role = "FARMER";
+    private String phoneNumber;
+    private String firstName;
+    private String lastName;
+    private String address;
+    private String city;
+    private String postalCode;
 }

@@ -5,6 +5,7 @@ import com.ceyharvest.ceyharvest.config.JwtTokenUtil;
 import com.ceyharvest.ceyharvest.document.*;
 import com.ceyharvest.ceyharvest.dto.*;
 import com.ceyharvest.ceyharvest.repository.*;
+import com.ceyharvest.ceyharvest.service.EmailVerificationService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -33,28 +34,98 @@ public class UserAuthController {
     private PasswordEncoder passwordEncoder;
     @Autowired
     private AdminSecurityConfig adminSecurityConfig;
+    @Autowired
+    private EmailVerificationService emailVerificationService;
+    
+    // Helper method to check for duplicate email or phone
+    private ResponseEntity<?> checkForDuplicates(String email, String phoneNumber) {
+        // Check email duplicates across all user types
+        if (email != null && !email.isEmpty()) {
+            if (farmerRepository.findByEmail(email).isPresent()) {
+                return ResponseEntity.status(409).body("Email already registered as farmer");
+            }
+            if (buyerRepository.findByEmail(email).isPresent()) {
+                return ResponseEntity.status(409).body("Email already registered as buyer");
+            }
+            if (driverRepository.findByEmail(email).isPresent()) {
+                return ResponseEntity.status(409).body("Email already registered as driver");
+            }
+            if (adminRepository.findByEmail(email).isPresent()) {
+                return ResponseEntity.status(409).body("Email already registered as admin");
+            }
+        }
+        
+        // Check phone number duplicates across all user types (if phone number provided)
+        if (phoneNumber != null && !phoneNumber.isEmpty()) {
+            if (farmerRepository.findByPhoneNumber(phoneNumber).isPresent()) {
+                return ResponseEntity.status(409).body("Phone number already registered as farmer");
+            }
+            if (buyerRepository.findByPhoneNumber(phoneNumber).isPresent()) {
+                return ResponseEntity.status(409).body("Phone number already registered as buyer");
+            }
+            if (driverRepository.findByPhoneNumber(phoneNumber).isPresent()) {
+                return ResponseEntity.status(409).body("Phone number already registered as driver");
+            }
+        }
+        
+        return null; // No duplicates found
+    }
 
     // Farmer Registration
     @PostMapping("/farmer/register")
     public ResponseEntity<?> registerFarmer(@Valid @RequestBody SecureRegisterDTO dto) {
-        if (farmerRepository.findByEmail(dto.getEmail()).isPresent()) {
-            return ResponseEntity.badRequest().body("Farmer already exists");
+        // Check for duplicate email or phone number
+        ResponseEntity<?> duplicateCheck = checkForDuplicates(dto.getEmail(), dto.getPhoneNumber());
+        if (duplicateCheck != null) {
+            return duplicateCheck;
         }
         
-        // Encrypt password before saving
-        String hashedPassword = passwordEncoder.encode(dto.getPassword());
-        Farmer farmer = new Farmer(null, dto.getUsername(), hashedPassword, dto.getEmail(), "FARMER");
-        farmerRepository.save(farmer);
-        
-        // Generate JWT token
-        String token = jwtTokenUtil.generateToken(farmer.getEmail(), farmer.getRole(), farmer.getId());
-        
-        Map<String, Object> response = new HashMap<>();
-        response.put("token", token);
-        response.put("user", farmer);
-        response.put("message", "Registration successful");
-        
-        return ResponseEntity.ok(response);
+        try {
+            // Encrypt password before storing for verification
+            String hashedPassword = passwordEncoder.encode(dto.getPassword());
+            Farmer farmer = new Farmer();
+            farmer.setUsername(dto.getUsername());
+            farmer.setPassword(hashedPassword);
+            farmer.setEmail(dto.getEmail());
+            farmer.setRole("FARMER");
+            
+            // Set additional fields if provided
+            if (dto.getPhoneNumber() != null && !dto.getPhoneNumber().isEmpty()) {
+                farmer.setPhoneNumber(dto.getPhoneNumber());
+            }
+            if (dto.getFirstName() != null && !dto.getFirstName().isEmpty()) {
+                farmer.setFirstName(dto.getFirstName());
+            }
+            if (dto.getLastName() != null && !dto.getLastName().isEmpty()) {
+                farmer.setLastName(dto.getLastName());
+            }
+            if (dto.getAddress() != null && !dto.getAddress().isEmpty()) {
+                farmer.setAddress(dto.getAddress());
+            }
+            if (dto.getCity() != null && !dto.getCity().isEmpty()) {
+                farmer.setCity(dto.getCity());
+            }
+            if (dto.getPostalCode() != null && !dto.getPostalCode().isEmpty()) {
+                farmer.setPostalCode(dto.getPostalCode());
+            }
+            
+            // Send verification email instead of saving directly
+            boolean emailSent = emailVerificationService.sendVerificationCode(dto.getEmail(), "FARMER", farmer);
+            
+            if (emailSent) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("message", "Registration initiated! Please check your email for verification code");
+                response.put("email", dto.getEmail());
+                response.put("userType", "FARMER");
+                response.put("requiresVerification", true);
+                
+                return ResponseEntity.ok(response);
+            } else {
+                return ResponseEntity.status(500).body("Failed to send verification email. Please try again.");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Registration failed: " + e.getMessage());
+        }
     }
 
     // Farmer Login
@@ -82,30 +153,46 @@ public class UserAuthController {
     // Buyer Registration
     @PostMapping("/buyer/register")
     public ResponseEntity<?> registerBuyer(@Valid @RequestBody SecureRegisterDTO dto) {
-        if (buyerRepository.findByEmail(dto.getEmail()).isPresent()) {
-            return ResponseEntity.badRequest().body("Buyer already exists");
+        // Check for duplicate email or phone number
+        ResponseEntity<?> duplicateCheck = checkForDuplicates(dto.getEmail(), dto.getPhoneNumber());
+        if (duplicateCheck != null) {
+            return duplicateCheck;
         }
         
-        // Encrypt password before saving
-        String hashedPassword = passwordEncoder.encode(dto.getPassword());
-        Buyer buyer = new Buyer();
-        buyer.setUsername(dto.getUsername());
-        buyer.setPassword(hashedPassword);
-        buyer.setEmail(dto.getEmail());
-        buyer.setRole("BUYER");
-        buyer.setCreatedAt(LocalDateTime.now());
-        buyer.setUpdatedAt(LocalDateTime.now());
-        buyerRepository.save(buyer);
-        
-        // Generate JWT token
-        String token = jwtTokenUtil.generateToken(buyer.getEmail(), buyer.getRole(), buyer.getId());
-        
-        Map<String, Object> response = new HashMap<>();
-        response.put("token", token);
-        response.put("user", buyer);
-        response.put("message", "Registration successful");
-        
-        return ResponseEntity.ok(response);
+        try {
+            // Encrypt password before storing for verification
+            String hashedPassword = passwordEncoder.encode(dto.getPassword());
+            Buyer buyer = new Buyer();
+            buyer.setUsername(dto.getUsername());
+            buyer.setFirstName(dto.getFirstName());
+            buyer.setLastName(dto.getLastName());
+            buyer.setEmail(dto.getEmail());
+            buyer.setPhoneNumber(dto.getPhoneNumber());
+            buyer.setAddress(dto.getAddress());
+            buyer.setCity(dto.getCity());
+            buyer.setPostalCode(dto.getPostalCode());
+            buyer.setPassword(hashedPassword);
+            buyer.setRole("BUYER");
+            buyer.setCreatedAt(LocalDateTime.now());
+            buyer.setUpdatedAt(LocalDateTime.now());
+            
+            // Send verification email instead of saving directly
+            boolean emailSent = emailVerificationService.sendVerificationCode(dto.getEmail(), "BUYER", buyer);
+            
+            if (emailSent) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("message", "Registration initiated! Please check your email for verification code");
+                response.put("email", dto.getEmail());
+                response.put("userType", "BUYER");
+                response.put("requiresVerification", true);
+                
+                return ResponseEntity.ok(response);
+            } else {
+                return ResponseEntity.status(500).body("Failed to send verification email. Please try again.");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Registration failed: " + e.getMessage());
+        }
     }
 
     // Buyer Login
@@ -133,24 +220,58 @@ public class UserAuthController {
     // Driver Registration
     @PostMapping("/driver/register")
     public ResponseEntity<?> registerDriver(@Valid @RequestBody SecureRegisterDTO dto) {
-        if (driverRepository.findByEmail(dto.getEmail()).isPresent()) {
-            return ResponseEntity.badRequest().body("Driver already exists");
+        // Check for duplicate email or phone number
+        ResponseEntity<?> duplicateCheck = checkForDuplicates(dto.getEmail(), dto.getPhoneNumber());
+        if (duplicateCheck != null) {
+            return duplicateCheck;
         }
         
-        // Encrypt password before saving
-        String hashedPassword = passwordEncoder.encode(dto.getPassword());
-        Driver driver = new Driver(null, dto.getUsername(), hashedPassword, dto.getEmail(), "DRIVER");
-        driverRepository.save(driver);
-        
-        // Generate JWT token
-        String token = jwtTokenUtil.generateToken(driver.getEmail(), driver.getRole(), driver.getId());
-        
-        Map<String, Object> response = new HashMap<>();
-        response.put("token", token);
-        response.put("user", driver);
-        response.put("message", "Registration successful");
-        
-        return ResponseEntity.ok(response);
+        try {
+            // Encrypt password before storing for verification
+            String hashedPassword = passwordEncoder.encode(dto.getPassword());
+            Driver driver = new Driver();
+            driver.setUsername(dto.getUsername());
+            driver.setPassword(hashedPassword);
+            driver.setEmail(dto.getEmail());
+            driver.setRole("DRIVER");
+            
+            // Set additional fields if provided
+            if (dto.getPhoneNumber() != null && !dto.getPhoneNumber().isEmpty()) {
+                driver.setPhoneNumber(dto.getPhoneNumber());
+            }
+            if (dto.getFirstName() != null && !dto.getFirstName().isEmpty()) {
+                driver.setFirstName(dto.getFirstName());
+            }
+            if (dto.getLastName() != null && !dto.getLastName().isEmpty()) {
+                driver.setLastName(dto.getLastName());
+            }
+            if (dto.getAddress() != null && !dto.getAddress().isEmpty()) {
+                driver.setAddress(dto.getAddress());
+            }
+            if (dto.getCity() != null && !dto.getCity().isEmpty()) {
+                driver.setCity(dto.getCity());
+            }
+            if (dto.getPostalCode() != null && !dto.getPostalCode().isEmpty()) {
+                driver.setPostalCode(dto.getPostalCode());
+            }
+            
+            // Send verification email instead of saving directly
+            boolean emailSent = emailVerificationService.sendVerificationCode(dto.getEmail(), "DRIVER", driver);
+            
+            if (emailSent) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("message", "Registration initiated! Please check your email for verification code");
+                response.put("email", dto.getEmail());
+                response.put("userType", "DRIVER");
+                response.put("requiresVerification", true);
+                
+                return ResponseEntity.ok(response);
+            } else {
+                return ResponseEntity.status(500).body("Failed to send verification email. Please try again.");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Registration failed: " + e.getMessage());
+        }
     }
 
     // Driver Login
@@ -232,4 +353,4 @@ public class UserAuthController {
         }
         return ResponseEntity.status(404).body("Admin not found");
     }
-} 
+}

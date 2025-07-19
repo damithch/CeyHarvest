@@ -24,13 +24,13 @@ public class UserPasswordResetController {
             String token = passwordResetService.createPasswordResetToken(request.getEmail());
             
             Map<String, Object> response = new HashMap<>();
-            response.put("message", "Password reset instructions have been sent to your email");
-            response.put("expiresIn", "1 hour");
-            response.put("instructions", "Check your email for the password reset link. If you don't receive the email, you can use the token below:");
+            response.put("message", "A 6-digit password reset code has been sent to your email");
+            response.put("expiresIn", "15 minutes");
+            response.put("instructions", "Check your email for the 6-digit code. Enter this code in the password reset form.");
             
             // In development, also provide the token for testing
-            response.put("resetToken", token);
-            response.put("developmentNote", "In production, the token is only sent via email");
+            response.put("resetCode", token);
+            response.put("developmentNote", "In production, the code is only sent via email");
             
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
@@ -44,7 +44,7 @@ public class UserPasswordResetController {
     public ResponseEntity<?> resetPassword(@Valid @RequestBody PasswordResetConfirmDTO request) {
         // Debug logging
         System.out.println("Password reset request received:");
-        System.out.println("Token: " + (request.getToken() != null ? request.getToken().substring(0, Math.min(8, request.getToken().length())) + "..." : "null"));
+        System.out.println("6-digit Code: " + (request.getToken() != null ? request.getToken() : "null"));
         System.out.println("New Password: " + (request.getNewPassword() != null ? "[PROVIDED]" : "null"));
         System.out.println("Confirm Password: " + (request.getConfirmPassword() != null ? "[PROVIDED]" : "null"));
         

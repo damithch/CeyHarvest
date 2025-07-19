@@ -7,4 +7,5 @@ import java.util.Optional;
 
 public interface FarmerRepository extends MongoRepository<Farmer, String> {
     Optional<Farmer> findByEmail(String email);
+    Optional<Farmer> findByPhoneNumber(String phoneNumber);
 }

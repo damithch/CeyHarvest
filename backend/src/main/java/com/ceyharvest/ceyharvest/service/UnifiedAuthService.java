@@ -68,6 +68,43 @@ public class UnifiedAuthService {
     }
 
     /**
+     * Unified login method that accepts both email and phone number
+     */
+    public Map<String, Object> attemptLoginWithIdentifier(String identifier, String password) {
+        // Check if identifier is email or phone number
+        boolean isEmail = identifier.contains("@");
+        
+        if (isEmail) {
+            // Use existing email-based login
+            return attemptLogin(identifier, password);
+        } else {
+            // Search by phone number across all user types
+            // Try Farmer by phone
+            Optional<Farmer> farmerOpt = farmerRepository.findByPhoneNumber(identifier);
+            if (farmerOpt.isPresent() && passwordEncoder.matches(password, farmerOpt.get().getPassword())) {
+                Farmer farmer = farmerOpt.get();
+                return createLoginResponse(farmer.getEmail(), farmer.getRole(), farmer.getId(), farmer, "FARMER");
+            }
+
+            // Try Buyer by phone
+            Optional<Buyer> buyerOpt = buyerRepository.findByPhoneNumber(identifier);
+            if (buyerOpt.isPresent() && passwordEncoder.matches(password, buyerOpt.get().getPassword())) {
+                Buyer buyer = buyerOpt.get();
+                return createLoginResponse(buyer.getEmail(), buyer.getRole(), buyer.getId(), buyer, "BUYER");
+            }
+
+            // Try Driver by phone
+            Optional<Driver> driverOpt = driverRepository.findByPhoneNumber(identifier);
+            if (driverOpt.isPresent() && passwordEncoder.matches(password, driverOpt.get().getPassword())) {
+                Driver driver = driverOpt.get();
+                return createLoginResponse(driver.getEmail(), driver.getRole(), driver.getId(), driver, "DRIVER");
+            }
+
+            return null; // No match found for phone number
+        }
+    }
+
+    /**
      * Check if email exists across all user types
      */
     public String findUserRoleByEmail(String email) {

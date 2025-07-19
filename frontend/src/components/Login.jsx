@@ -4,11 +4,14 @@ import { useAuth } from '../contexts/AuthContext';
 
 const Login = () => {
   const [formData, setFormData] = useState({
-    email: '',
+    identifier: '', // Can be email or phone number
     password: ''
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showResendOption, setShowResendOption] = useState(false);
+  const [resendEmail, setResendEmail] = useState('');
+  const [resendMessage, setResendMessage] = useState('');
   const navigate = useNavigate();
   const { login } = useAuth();
 
@@ -19,32 +22,77 @@ const Login = () => {
     });
   };
 
+  const handleResendVerification = async () => {
+    setResendMessage('Sending...');
+    try {
+      const response = await fetch('/api/verification/resend-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: resendEmail,
+          userType: 'UNKNOWN' // Will be determined by the service
+        }),
+      });
+
+      if (response.ok) {
+        setResendMessage('Verification code sent! Please check your email.');
+      } else {
+        const errorMsg = await response.text();
+        setResendMessage(`Failed to send: ${errorMsg}`);
+      }
+    } catch (err) {
+      setResendMessage('Network error. Please try again.');
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
     try {
-      // Use unified login endpoint
+      console.log('Attempting login with:', { identifier: formData.identifier });
+      
+      // Use unified login endpoint that accepts email or phone
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email: formData.email,
+          identifier: formData.identifier, // Can be email or phone
           password: formData.password
         }),
       });
 
+      console.log('Login response status:', response.status);
+      console.log('Login response URL:', response.url);
+
       if (response.ok) {
         const responseData = await response.json();
+        console.log('Login successful:', responseData);
         const userRole = responseData.role;
         login(responseData, userRole);
         navigate('/dashboard');
       } else {
-        const errorMsg = await response.text();
-        setError(errorMsg || 'Invalid email or password');
+        const errorData = await response.text();
+        console.error('Login error:', errorData);
+        
+        // Try to parse as JSON to check for unverified email
+        try {
+          const errorJson = JSON.parse(errorData);
+          if (errorJson.error === 'UNVERIFIED_EMAIL') {
+            setShowResendOption(true);
+            setResendEmail(errorJson.email);
+            setError(errorJson.message);
+          } else {
+            setError(errorJson.message || 'Invalid email/phone or password');
+          }
+        } catch {
+          // Not JSON, treat as plain text error
+          setError(errorData || 'Invalid email/phone or password');
+        }
       }
     } catch (err) {
+      console.error('Login network error:', err);
       setError('Network error. Please try again.');
     } finally {
       setLoading(false);
@@ -69,18 +117,18 @@ const Login = () => {
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                Email Address
+              <label htmlFor="identifier" className="block text-sm font-medium text-gray-700 mb-1">
+                Email or Phone Number
               </label>
               <input
-                id="email"
-                name="email"
-                type="email"
+                id="identifier"
+                name="identifier"
+                type="text"
                 required
-                value={formData.email}
+                value={formData.identifier}
                 onChange={handleChange}
                 className="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
-                placeholder="Enter your email address"
+                placeholder="Enter your email or phone number"
               />
             </div>
 
@@ -104,6 +152,34 @@ const Login = () => {
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded">
               {error}
+            </div>
+          )}
+
+          {showResendOption && (
+            <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded">
+              <div className="flex flex-col space-y-2">
+                <p className="text-sm">
+                  Your email <strong>{resendEmail}</strong> is not verified yet.
+                </p>
+                <div className="flex items-center space-x-2">
+                  <button
+                    type="button"
+                    onClick={handleResendVerification}
+                    className="text-sm bg-yellow-600 text-white px-3 py-1 rounded hover:bg-yellow-700 transition duration-200"
+                  >
+                    Resend Verification Code
+                  </button>
+                  <Link
+                    to="/register"
+                    className="text-sm text-blue-600 hover:text-blue-500 underline"
+                  >
+                    Go to Registration
+                  </Link>
+                </div>
+                {resendMessage && (
+                  <p className="text-sm mt-2 text-gray-700">{resendMessage}</p>
+                )}
+              </div>
             </div>
           )}
 
@@ -148,15 +224,14 @@ const Login = () => {
           {/* Features Info */}
           <div className="mt-6 bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-md p-4">
             <div className="text-xs text-gray-700">
-              <p className="font-medium mb-2 text-green-700">🌾 One Account, Multiple Possibilities</p>
+              <p className="font-medium mb-2 text-green-700">🌾 Connect & Trade Fresh Produce</p>
               <div className="grid grid-cols-1 gap-2">
-                <p>• <strong>Farmers:</strong> Manage crops and sales</p>
-                <p>• <strong>Buyers:</strong> Purchase fresh produce</p>
-                <p>• <strong>Drivers:</strong> Handle deliveries</p>
-                <p>• <strong>Admins:</strong> Platform management</p>
+                <p>• <strong>Farmers:</strong> Sell your harvest directly</p>
+                <p>• <strong>Buyers:</strong> Source fresh, quality produce</p>
+                <p>• <strong>Drivers:</strong> Efficient delivery services</p>
               </div>
               <p className="mt-2 text-green-600 font-medium">
-                Login with any valid email - no special format required!
+                Join Sri Lanka's premier agricultural marketplace!
               </p>
             </div>
           </div>

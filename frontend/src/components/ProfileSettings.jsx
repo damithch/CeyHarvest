@@ -14,7 +14,7 @@ const ProfileSettings = ({ onBack }) => {
     email: '',
     firstName: '',
     lastName: '',
-    phone: '',
+    phoneNumber: '', // Changed from 'phone' to 'phoneNumber'
     address: '',
     city: '',
     postalCode: ''
@@ -36,7 +36,7 @@ const ProfileSettings = ({ onBack }) => {
         email: user.email || '',
         firstName: user.firstName || '',
         lastName: user.lastName || '',
-        phone: user.phone || '',
+        phoneNumber: user.phoneNumber || user.phone || '', // Handle both possible field names
         address: user.address || '',
         city: user.city || '',
         postalCode: user.postalCode || ''
@@ -67,7 +67,8 @@ const ProfileSettings = ({ onBack }) => {
     setMessage('');
 
     try {
-      const response = await fetch(`http://localhost:8080/api/buyer/profile/${user.email}`, {
+      // Use the universal profile update endpoint
+      const response = await fetch('http://localhost:8080/api/profile/update', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -81,8 +82,8 @@ const ProfileSettings = ({ onBack }) => {
         setIsEditing(false);
         // You might want to update the user context here
       } else {
-        const errorData = await response.json();
-        setError(errorData.error || 'Failed to update profile');
+        const errorData = await response.text();
+        setError(errorData || 'Failed to update profile');
       }
     } catch (error) {
       setError('Network error. Please try again.');
@@ -254,14 +255,14 @@ const ProfileSettings = ({ onBack }) => {
 
               {/* Phone */}
               <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700">
                   Phone Number
                 </label>
                 <input
                   type="tel"
-                  id="phone"
-                  name="phone"
-                  value={profileData.phone}
+                  id="phoneNumber"
+                  name="phoneNumber"
+                  value={profileData.phoneNumber}
                   onChange={handleInputChange}
                   disabled={!isEditing}
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
