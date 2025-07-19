@@ -27,17 +27,21 @@ public class VerificationController {
     @PostMapping("/verify-email")
     public ResponseEntity<?> verifyEmail(@Valid @RequestBody EmailVerificationDto dto) {
         try {
+            // Use userType if provided, otherwise fall back to determining from name
+            String userType = (dto.getUserType() != null && !dto.getUserType().isEmpty()) 
+                ? dto.getUserType() 
+                : determineUserTypeFromName(dto.getName());
+                
             Map<String, Object> result = emailVerificationService.verifyEmailAndCompleteRegistration(
                 dto.getEmail(), 
                 dto.getCode(), 
-                determineUserTypeFromName(dto.getName())
+                userType
             );
             
             if ((Boolean) result.get("success")) {
                 // Generate JWT token for the verified user
                 Object user = result.get("user");
                 String email = dto.getEmail();
-                String userType = determineUserTypeFromName(dto.getName());
                 String userId = getUserId(user);
                 
                 String token = jwtTokenUtil.generateToken(email, userType, userId);

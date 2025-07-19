@@ -4,7 +4,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 
 @Service
 public class EmailService {
@@ -136,17 +140,54 @@ public class EmailService {
      */
     public void sendEmail(String toEmail, String subject, String body) {
         try {
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom(fromEmail);
-            message.setTo(toEmail);
-            message.setSubject(subject);
-            message.setText(body);
-            
-            mailSender.send(message);
+            // Check if body contains HTML tags
+            if (body.contains("<html>") || body.contains("<!DOCTYPE html>")) {
+                sendHtmlEmail(toEmail, subject, body);
+            } else {
+                sendPlainTextEmail(toEmail, subject, body);
+            }
             System.out.println("Email sent successfully to: " + toEmail);
         } catch (Exception e) {
             System.err.println("Failed to send email to " + toEmail + ": " + e.getMessage());
             throw new RuntimeException("Failed to send email", e);
         }
+    }
+
+    /**
+     * Send HTML email
+     * @param toEmail The recipient email address
+     * @param subject The email subject
+     * @param htmlBody The HTML email body content
+     */
+    private void sendHtmlEmail(String toEmail, String subject, String htmlBody) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            
+            helper.setFrom(fromEmail);
+            helper.setTo(toEmail);
+            helper.setSubject(subject);
+            helper.setText(htmlBody, true); // true indicates HTML content
+            
+            mailSender.send(message);
+        } catch (MessagingException e) {
+            throw new RuntimeException("Failed to send HTML email", e);
+        }
+    }
+
+    /**
+     * Send plain text email
+     * @param toEmail The recipient email address
+     * @param subject The email subject
+     * @param textBody The plain text email body content
+     */
+    private void sendPlainTextEmail(String toEmail, String subject, String textBody) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(fromEmail);
+        message.setTo(toEmail);
+        message.setSubject(subject);
+        message.setText(textBody);
+        
+        mailSender.send(message);
     }
 }

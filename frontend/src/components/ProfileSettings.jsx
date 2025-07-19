@@ -110,7 +110,8 @@ const ProfileSettings = ({ onBack }) => {
     setMessage('');
 
     try {
-      const response = await fetch(`http://localhost:8080/api/buyer/change-password/${user.email}`, {
+      // Use the universal password change endpoint
+      const response = await fetch('http://localhost:8080/api/profile/change-password', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
