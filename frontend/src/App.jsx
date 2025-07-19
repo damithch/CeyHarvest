@@ -10,7 +10,7 @@ import ResetPassword from './components/ResetPassword';
 import AdminDashboard from './components/AdminDashboard';
 import FarmerDashboard from './components/FarmerDashboard';
 import BuyerDashboard from './components/BuyerDashboard';
-
+import AddproductForm from './components/AddProductForm';
 const Dashboard = () => {
   const { user } = useAuth();
 
@@ -44,6 +44,7 @@ function App() {
               </ProtectedRoute>
             } 
           />
+          < Route path="/add-product" element={<AddproductForm />} />
           <Route path="*" element={<div style={{padding: '20px'}}>Page not found - but router is working!</div>} />
         </Routes>
       </Router>

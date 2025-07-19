@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import DashboardLayout from '../components/DashboardLayout';
+import AddProductForm from '../components/AddProductForm';
+
 
 const FarmerDashboard = () => {
   const { user, getAuthHeaders } = useAuth();
@@ -12,6 +14,9 @@ const FarmerDashboard = () => {
     totalRevenue: 0,
     pendingOrders: 0
   });
+
+  const [showAddForm, setShowAddForm] = useState(false);
+
 
   useEffect(() => {
     if (user && user.id) {
@@ -130,7 +135,7 @@ const FarmerDashboard = () => {
           <div className="bg-white p-6 rounded-lg shadow">
             <h3 className="text-lg font-medium text-gray-900 mb-4">Product Management</h3>
             <div className="space-y-3">
-              <button className="w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+              <button onClick={() => setShowAddForm(true)}  className="w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
                 Add New Product
               </button>
               <button className="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
@@ -236,6 +241,35 @@ const FarmerDashboard = () => {
           </ul>
         </div>
       </div>
+
+{showAddForm && (
+  <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto relative">
+      <button
+        className="absolute top-4 right-4 text-gray-600 hover:text-red-600 text-xl font-bold z-10"
+        onClick={() => setShowAddForm(false)}
+        aria-label="Close modal"
+      >
+        ✕
+      </button>
+      <AddProductForm 
+        onClose={() => setShowAddForm(false)}
+        onSubmit={async (productData) => {
+          // Handle product submission here
+          console.log('New product:', productData);
+          // You can add API call here
+          // await addProduct(productData);
+        }}
+      />
+    </div>
+  </div>
+)}
+
+
+
+
+
+
     </DashboardLayout>
   );
 };
