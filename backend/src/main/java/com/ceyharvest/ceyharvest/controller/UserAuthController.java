@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -87,7 +88,13 @@ public class UserAuthController {
         
         // Encrypt password before saving
         String hashedPassword = passwordEncoder.encode(dto.getPassword());
-        Buyer buyer = new Buyer(null, dto.getUsername(), hashedPassword, dto.getEmail(), "BUYER");
+        Buyer buyer = new Buyer();
+        buyer.setUsername(dto.getUsername());
+        buyer.setPassword(hashedPassword);
+        buyer.setEmail(dto.getEmail());
+        buyer.setRole("BUYER");
+        buyer.setCreatedAt(LocalDateTime.now());
+        buyer.setUpdatedAt(LocalDateTime.now());
         buyerRepository.save(buyer);
         
         // Generate JWT token
