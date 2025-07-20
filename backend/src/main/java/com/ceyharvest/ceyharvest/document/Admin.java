@@ -24,6 +24,7 @@ public class Admin {
     
     private String role = "ADMIN";
     private boolean emailVerified = true; // Admins are pre-verified
+    private boolean passwordChangedFromDefault = false; // Track if password has been changed from default
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 } 

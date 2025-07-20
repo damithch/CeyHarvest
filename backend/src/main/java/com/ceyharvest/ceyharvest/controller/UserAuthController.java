@@ -345,6 +345,7 @@ public class UserAuthController {
             if (passwordEncoder.matches(dto.getOldPassword(), admin.getPassword())) {
                 // Encrypt new password before saving
                 admin.setPassword(passwordEncoder.encode(dto.getNewPassword()));
+                admin.setPasswordChangedFromDefault(true); // Mark that password has been changed from default
                 adminRepository.save(admin);
                 return ResponseEntity.ok("Password changed successfully");
             } else {
