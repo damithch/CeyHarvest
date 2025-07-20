@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import DashboardLayout from '../layout/DashboardLayout';
 import ProfileSettings from '../user/ProfileSettings';
+import { ROUTES } from '../../constants/routes';
 
 const BuyerDashboard = () => {
   const { user, getAuthHeaders } = useAuth();
+  const navigate = useNavigate();
   const [currentView, setCurrentView] = useState('dashboard');
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
@@ -25,8 +28,8 @@ const BuyerDashboard = () => {
 
   const fetchProducts = async () => {
     try {
-      // For buyers, we can use any identifier since they see all products
-      const response = await fetch(`/api/buyer/${user.email}/products`, {
+      // Use the new buyer products endpoint
+      const response = await fetch(`/api/buyer/products`, {
         headers: {
           'Content-Type': 'application/json',
           ...getAuthHeaders()
@@ -139,11 +142,17 @@ const BuyerDashboard = () => {
           <div className="bg-white p-6 rounded-lg shadow">
             <h3 className="text-lg font-medium text-gray-900 mb-4">Shopping</h3>
             <div className="space-y-3">
-              <button className="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+              <button 
+                onClick={() => navigate(ROUTES.BUYER.MARKETPLACE)}
+                className="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+              >
                 Browse Products
               </button>
-              <button className="w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
-                Fresh Arrivals
+              <button 
+                onClick={() => navigate(ROUTES.BUYER.CART)}
+                className="w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+              >
+                View Cart
               </button>
               <button className="w-full bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700">
                 Special Offers

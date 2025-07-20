@@ -58,6 +58,12 @@ public class SecurityConfig {
                 // Temporary password reset endpoint (REMOVE IN PRODUCTION)
                 .requestMatchers("/api/admin/reset/**").permitAll()
                 
+                // Development endpoints (REMOVE IN PRODUCTION)
+                .requestMatchers("/api/dev/**").permitAll()
+                
+                // Development cart endpoints (REMOVE IN PRODUCTION)
+                .requestMatchers("/api/dev/cart/**").permitAll()
+                
                 // Admin endpoints - only for ADMIN role
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 

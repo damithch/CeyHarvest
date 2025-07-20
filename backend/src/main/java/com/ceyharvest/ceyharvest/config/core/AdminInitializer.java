@@ -10,8 +10,8 @@ import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
-@Component
-@Order(2) // Run after PasswordMigration
+// @Component - Temporarily disabled to allow app startup without DB authentication
+// @Order(2) // Run after PasswordMigration
 public class AdminInitializer implements CommandLineRunner {
 
     @Autowired

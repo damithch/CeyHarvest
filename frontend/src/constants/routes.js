@@ -27,6 +27,7 @@ export const ROUTES = {
     ORDERS: '/buyer/orders',
     MARKETPLACE: '/buyer/marketplace',
     CART: '/buyer/cart',
+    CHECKOUT: '/buyer/checkout',
   },
 
   // Farmer routes
