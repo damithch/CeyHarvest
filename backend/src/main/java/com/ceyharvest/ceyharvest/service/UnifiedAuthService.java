@@ -185,6 +185,7 @@ public class UnifiedAuthService {
                 if (adminOpt.isPresent()) {
                     Admin admin = adminOpt.get();
                     admin.setPassword(hashedPassword);
+                    admin.setPasswordChangedFromDefault(true); // Mark that password has been changed from default
                     adminRepository.save(admin);
                     return true;
                 }

@@ -49,14 +49,19 @@ public class AdminEmailVerificationMigration implements CommandLineRunner {
             
             // Ensure authorized admins have correct passwords
             if (adminSecurityConfig.isAuthorizedAdminEmail(admin.getEmail())) {
-                String expectedPassword = adminSecurityConfig.getDefaultAdminPassword();
-                
-                // Check if password needs to be reset (in case of encoding issues)
-                if (!passwordEncoder.matches(expectedPassword, admin.getPassword())) {
-                    admin.setPassword(passwordEncoder.encode(expectedPassword));
-                    needsUpdate = true;
-                    migrationNeeded = true;
-                    System.out.println("🔑 Resetting password for admin: " + admin.getEmail());
+                // Only reset password if user hasn't changed it from default
+                if (!admin.isPasswordChangedFromDefault()) {
+                    String expectedPassword = adminSecurityConfig.getDefaultAdminPassword();
+                    
+                    // Check if password needs to be reset (in case of encoding issues)
+                    if (!passwordEncoder.matches(expectedPassword, admin.getPassword())) {
+                        admin.setPassword(passwordEncoder.encode(expectedPassword));
+                        needsUpdate = true;
+                        migrationNeeded = true;
+                        System.out.println("🔑 Resetting password for admin (first-time setup): " + admin.getEmail());
+                    }
+                } else {
+                    System.out.println("ℹ️  Preserving custom password for admin: " + admin.getEmail());
                 }
                 
                 // Set updated timestamp
@@ -84,13 +89,21 @@ public class AdminEmailVerificationMigration implements CommandLineRunner {
         
         for (String email : adminSecurityConfig.getAuthorizedAdminEmails()) {
             adminRepository.findByEmail(email).ifPresent(admin -> {
-                boolean passwordValid = passwordEncoder.matches(
-                    adminSecurityConfig.getDefaultAdminPassword(), 
-                    admin.getPassword()
-                );
-                
-                System.out.printf("Admin: %s | EmailVerified: %s | PasswordValid: %s%n", 
-                    email, admin.isEmailVerified(), passwordValid);
+                boolean passwordValid;
+                if (admin.isPasswordChangedFromDefault()) {
+                    // For custom passwords, we just check that it's properly encoded
+                    passwordValid = admin.getPassword() != null && admin.getPassword().startsWith("$2");
+                    System.out.printf("Admin: %s | EmailVerified: %s | CustomPassword: %s%n", 
+                        email, admin.isEmailVerified(), passwordValid ? "Valid" : "Invalid");
+                } else {
+                    // For default passwords, check against the expected default
+                    passwordValid = passwordEncoder.matches(
+                        adminSecurityConfig.getDefaultAdminPassword(), 
+                        admin.getPassword()
+                    );
+                    System.out.printf("Admin: %s | EmailVerified: %s | DefaultPasswordValid: %s%n", 
+                        email, admin.isEmailVerified(), passwordValid);
+                }
                     
                 if (!admin.isEmailVerified() || !passwordValid) {
                     System.err.println("❌ Migration verification failed for: " + email);

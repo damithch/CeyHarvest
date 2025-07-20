@@ -249,6 +249,7 @@ public class ProfileController {
             return ResponseEntity.status(400).body(Map.of("error", "Current password is incorrect"));
         }
         admin.setPassword(passwordEncoder.encode(newPassword));
+        admin.setPasswordChangedFromDefault(true); // Mark that password has been changed from default
         adminRepository.save(admin);
         return ResponseEntity.ok(Map.of("message", "Admin password changed successfully"));
     }
