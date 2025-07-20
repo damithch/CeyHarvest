@@ -7,6 +7,6 @@ import java.util.Optional;
 
 public interface BuyerRepository extends MongoRepository<Buyer, String> {
     Optional<Buyer> findByEmail(String email);
-    Optional<Buyer> findByPhoneNumber(String phoneNumber);
+    Optional<Buyer> findFirstByPhoneNumber(String phoneNumber);
     Optional<Buyer> findByUsername(String username);
 } 

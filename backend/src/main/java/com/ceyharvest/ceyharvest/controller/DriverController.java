@@ -49,6 +49,8 @@ public class DriverController {
                 response.put("city", driver.getCity());
                 response.put("postalCode", driver.getPostalCode());
                 response.put("role", driver.getRole());
+                response.put("createdAt", driver.getCreatedAt());
+                response.put("updatedAt", driver.getUpdatedAt());
                 
                 return ResponseEntity.ok(response);
             } else {

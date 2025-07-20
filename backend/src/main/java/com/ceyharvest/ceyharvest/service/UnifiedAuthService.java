@@ -80,21 +80,21 @@ public class UnifiedAuthService {
         } else {
             // Search by phone number across all user types
             // Try Farmer by phone
-            Optional<Farmer> farmerOpt = farmerRepository.findByPhoneNumber(identifier);
+            Optional<Farmer> farmerOpt = farmerRepository.findFirstByPhoneNumber(identifier);
             if (farmerOpt.isPresent() && passwordEncoder.matches(password, farmerOpt.get().getPassword())) {
                 Farmer farmer = farmerOpt.get();
                 return createLoginResponse(farmer.getEmail(), farmer.getRole(), farmer.getId(), farmer, "FARMER");
             }
 
             // Try Buyer by phone
-            Optional<Buyer> buyerOpt = buyerRepository.findByPhoneNumber(identifier);
+            Optional<Buyer> buyerOpt = buyerRepository.findFirstByPhoneNumber(identifier);
             if (buyerOpt.isPresent() && passwordEncoder.matches(password, buyerOpt.get().getPassword())) {
                 Buyer buyer = buyerOpt.get();
                 return createLoginResponse(buyer.getEmail(), buyer.getRole(), buyer.getId(), buyer, "BUYER");
             }
 
             // Try Driver by phone
-            Optional<Driver> driverOpt = driverRepository.findByPhoneNumber(identifier);
+            Optional<Driver> driverOpt = driverRepository.findFirstByPhoneNumber(identifier);
             if (driverOpt.isPresent() && passwordEncoder.matches(password, driverOpt.get().getPassword())) {
                 Driver driver = driverOpt.get();
                 return createLoginResponse(driver.getEmail(), driver.getRole(), driver.getId(), driver, "DRIVER");

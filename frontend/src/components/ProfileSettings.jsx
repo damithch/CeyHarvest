@@ -456,7 +456,15 @@ const ProfileSettings = ({ onBack }) => {
               </div>
               <div>
                 <span className="text-sm font-medium text-gray-700">Member Since:</span>
-                <p className="mt-1 text-sm text-gray-900">January 2024</p>
+                <p className="mt-1 text-sm text-gray-900">
+                  {user?.createdAt 
+                    ? new Date(user.createdAt).toLocaleDateString('en-US', { 
+                        year: 'numeric', 
+                        month: 'long' 
+                      })
+                    : 'Date not available'
+                  }
+                </p>
               </div>
               <div>
                 <span className="text-sm font-medium text-gray-700">Account Status:</span>
