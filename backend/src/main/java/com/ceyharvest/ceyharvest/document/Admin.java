@@ -23,6 +23,7 @@ public class Admin {
     private String email;
     
     private String role = "ADMIN";
+    private boolean emailVerified = true; // Admins are pre-verified
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 } 

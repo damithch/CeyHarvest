@@ -35,6 +35,7 @@ public class Buyer {
     private String city;
     private String postalCode;
     private String country;
+    private boolean emailVerified = false; // Set to true after email verification
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 } 

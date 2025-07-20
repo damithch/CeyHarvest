@@ -145,11 +145,13 @@ public class EmailVerificationService {
         switch (userType.toUpperCase()) {
             case "FARMER":
                 Farmer farmer = (Farmer) userData;
+                farmer.setEmailVerified(true); // Mark email as verified
                 farmer.setCreatedAt(now);
                 farmer.setUpdatedAt(now);
                 return farmerRepository.save(farmer);
             case "BUYER":
                 Buyer buyer = (Buyer) userData;
+                buyer.setEmailVerified(true); // Mark email as verified
                 if (buyer.getCreatedAt() == null) {
                     buyer.setCreatedAt(now);
                 }
@@ -157,11 +159,14 @@ public class EmailVerificationService {
                 return buyerRepository.save(buyer);
             case "DRIVER":
                 Driver driver = (Driver) userData;
+                driver.setEmailVerified(true); // Mark email as verified
                 driver.setCreatedAt(now);
                 driver.setUpdatedAt(now);
                 return driverRepository.save(driver);
             case "ADMIN":
-                return adminRepository.save((Admin) userData);
+                Admin admin = (Admin) userData;
+                admin.setEmailVerified(true); // Mark email as verified
+                return adminRepository.save(admin);
             default:
                 throw new IllegalArgumentException("Unknown user type: " + userType);
         }
