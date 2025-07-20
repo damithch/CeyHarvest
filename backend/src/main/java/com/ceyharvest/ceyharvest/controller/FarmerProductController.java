@@ -1,7 +1,9 @@
 package com.ceyharvest.ceyharvest.controller;
 
 import com.ceyharvest.ceyharvest.document.Product;
-import com.ceyharvest.ceyharvest.repository.ProductRepository;
+import com.ceyharvest.ceyharvest.dto.ProductRequestDTO;
+import com.ceyharvest.ceyharvest.dto.ProductResponseDTO;
+import com.ceyharvest.ceyharvest.service.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -10,94 +12,148 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.Base64;
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/farmer/{farmerId}/products")
+@CrossOrigin(origins = "*")
 public class FarmerProductController {
+    
     @Autowired
-    private ProductRepository productRepository;
+    private ProductService productService;
 
-    // Add Product with image upload
-    @PostMapping(consumes = {"multipart/form-data"})
+    // Add Product with JSON data (for AddProductForm)
+    @PostMapping(consumes = {"application/json"})
     public ResponseEntity<?> addProduct(
+            @PathVariable String farmerId,
+            @RequestBody ProductRequestDTO productRequest
+    ) {
+        try {
+            ProductResponseDTO savedProduct = productService.addProduct(farmerId, productRequest);
+            return ResponseEntity.ok(savedProduct);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error adding product: " + e.getMessage());
+        }
+    }
+
+    // Add Product with image upload (legacy endpoint)
+    @PostMapping(value = "/with-image", consumes = {"multipart/form-data"})
+    public ResponseEntity<?> addProductWithImage(
             @PathVariable String farmerId,
             @RequestParam String name,
             @RequestParam String description,
             @RequestParam double price,
-            @RequestParam int quantity,
+            @RequestParam double quantity,
             @RequestParam String category,
+            @RequestParam(value = "grade", defaultValue = "A") String grade,
+            @RequestParam(value = "location", defaultValue = "") String location,
+            @RequestParam(value = "harvestDate", required = false) String harvestDate,
             @RequestParam("image") MultipartFile image
     ) throws IOException {
-        Product product = new Product();
-        product.setId(null);
-        product.setFarmerId(farmerId);
-        product.setName(name);
-        product.setDescription(description);
-        product.setPrice(price);
-        product.setQuantity(quantity);
-        product.setCategory(category);
-        if (image != null && !image.isEmpty()) {
-            product.setImageBase64(Base64.getEncoder().encodeToString(image.getBytes()));
+        try {
+            ProductRequestDTO productRequest = new ProductRequestDTO();
+            productRequest.setProductName(name);
+            productRequest.setDescription(description);
+            productRequest.setPrice(price);
+            productRequest.setQuantity(quantity);
+            productRequest.setGrade(grade);
+            productRequest.setLocation(location);
+            // Note: harvestDate would need to be parsed from String to LocalDate
+            
+            ProductResponseDTO savedProduct = productService.addProduct(farmerId, productRequest);
+            return ResponseEntity.ok(savedProduct);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error adding product: " + e.getMessage());
         }
-        Product saved = productRepository.save(product);
-        return ResponseEntity.ok(saved);
     }
 
-    // Update Product with image upload
-    @PutMapping(value = "/{productId}", consumes = {"multipart/form-data"})
+    // Update Product with JSON data
+    @PutMapping(value = "/{productId}", consumes = {"application/json"})
     public ResponseEntity<?> updateProduct(
+            @PathVariable String farmerId,
+            @PathVariable String productId,
+            @RequestBody ProductRequestDTO productRequest
+    ) {
+        try {
+            ProductResponseDTO updatedProduct = productService.updateProduct(farmerId, productId, productRequest);
+            return ResponseEntity.ok(updatedProduct);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error updating product: " + e.getMessage());
+        }
+    }
+
+    // Update Product with image upload (legacy endpoint)
+    @PutMapping(value = "/{productId}/with-image", consumes = {"multipart/form-data"})
+    public ResponseEntity<?> updateProductWithImage(
             @PathVariable String farmerId,
             @PathVariable String productId,
             @RequestParam String name,
             @RequestParam String description,
             @RequestParam double price,
-            @RequestParam int quantity,
+            @RequestParam double quantity,
             @RequestParam String category,
+            @RequestParam(value = "grade", defaultValue = "A") String grade,
+            @RequestParam(value = "location", defaultValue = "") String location,
+            @RequestParam(value = "harvestDate", required = false) String harvestDate,
             @RequestParam(value = "image", required = false) MultipartFile image
     ) throws IOException {
-        Optional<Product> existing = productRepository.findById(productId);
-        if (existing.isEmpty() || !existing.get().getFarmerId().equals(farmerId)) {
-            return ResponseEntity.notFound().build();
+        try {
+            ProductRequestDTO productRequest = new ProductRequestDTO();
+            productRequest.setProductName(name);
+            productRequest.setDescription(description);
+            productRequest.setPrice(price);
+            productRequest.setQuantity(quantity);
+            productRequest.setGrade(grade);
+            productRequest.setLocation(location);
+            // Note: harvestDate would need to be parsed from String to LocalDate
+            
+            ProductResponseDTO updatedProduct = productService.updateProduct(farmerId, productId, productRequest);
+            return ResponseEntity.ok(updatedProduct);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error updating product: " + e.getMessage());
         }
-        Product toUpdate = existing.get();
-        toUpdate.setName(name);
-        toUpdate.setDescription(description);
-        toUpdate.setPrice(price);
-        toUpdate.setQuantity(quantity);
-        toUpdate.setCategory(category);
-        if (image != null && !image.isEmpty()) {
-            toUpdate.setImageBase64(Base64.getEncoder().encodeToString(image.getBytes()));
-        }
-        Product updated = productRepository.save(toUpdate);
-        return ResponseEntity.ok(updated);
     }
 
     // Delete Product
     @DeleteMapping("/{productId}")
     public ResponseEntity<?> deleteProduct(@PathVariable String farmerId, @PathVariable String productId) {
-        Optional<Product> existing = productRepository.findById(productId);
-        if (existing.isEmpty() || !existing.get().getFarmerId().equals(farmerId)) {
-            return ResponseEntity.notFound().build();
+        try {
+            productService.deleteProduct(farmerId, productId);
+            return ResponseEntity.ok().body("Product deleted successfully");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error deleting product: " + e.getMessage());
         }
-        productRepository.deleteById(productId);
-        return ResponseEntity.ok().build();
     }
 
     // List All Products for Farmer
     @GetMapping
-    public ResponseEntity<List<Product>> listProducts(@PathVariable String farmerId) {
-        List<Product> products = productRepository.findByFarmerId(farmerId);
-        return ResponseEntity.ok(products);
+    public ResponseEntity<List<ProductResponseDTO>> listProducts(@PathVariable String farmerId) {
+        try {
+            List<ProductResponseDTO> products = productService.getFarmerProducts(farmerId);
+            return ResponseEntity.ok(products);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     // Get Product by ID
     @GetMapping("/{productId}")
     public ResponseEntity<?> getProduct(@PathVariable String farmerId, @PathVariable String productId) {
-        Optional<Product> product = productRepository.findById(productId);
-        if (product.isPresent() && product.get().getFarmerId().equals(farmerId)) {
-            return ResponseEntity.ok(product.get());
+        try {
+            ProductResponseDTO product = productService.getProduct(farmerId, productId);
+            return ResponseEntity.ok(product);
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.notFound().build();
+    }
+    
+    // Get all active products (for buyers to browse)
+    @GetMapping("/all/active")
+    public ResponseEntity<List<ProductResponseDTO>> getAllActiveProducts() {
+        try {
+            List<ProductResponseDTO> products = productService.getAllActiveProducts();
+            return ResponseEntity.ok(products);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 } 

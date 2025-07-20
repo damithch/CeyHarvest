@@ -6,6 +6,9 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
 @Document(collection = "products")
 @Data
 @NoArgsConstructor
@@ -17,7 +20,15 @@ public class Product {
     private String name;
     private String description;
     private double price;
-    private int quantity;
+    private double quantity; // Changed to double to support decimal quantities
     private String category;
     private String imageBase64;
+    
+    // New fields from AddProductForm
+    private String grade; // A, B, C
+    private String location; // e.g., Polonnaruwa, Anuradhapura
+    private LocalDate harvestDate;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    private boolean isActive = true; // To mark products as active/inactive
 }
