@@ -32,6 +32,7 @@ public class Driver {
     private String address;
     private String city;
     private String postalCode;
+    private boolean emailVerified = false; // Set to true after email verification
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 } 

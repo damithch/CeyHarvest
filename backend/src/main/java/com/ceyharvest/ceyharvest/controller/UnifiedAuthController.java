@@ -34,18 +34,13 @@ public class UnifiedAuthController {
             Map<String, Object> loginResult = unifiedAuthService.attemptLoginWithIdentifier(identifier, password);
             
             if (loginResult != null) {
+                // Check if this is an unverified email response
+                if (loginResult.containsKey("error") && "UNVERIFIED_EMAIL".equals(loginResult.get("error"))) {
+                    return ResponseEntity.status(401).body(loginResult);
+                }
                 return ResponseEntity.ok(loginResult);
             } else {
-                // Check if this is an unverified email case
-                if (identifier.contains("@")) {
-                    Map<String, Object> errorResponse = new HashMap<>();
-                    errorResponse.put("error", "UNVERIFIED_EMAIL");
-                    errorResponse.put("message", "Email has not been verified yet. Please check your email or resend verification code.");
-                    errorResponse.put("email", identifier);
-                    return ResponseEntity.status(401).body(errorResponse);
-                } else {
-                    return ResponseEntity.status(401).body("Invalid email/phone or password");
-                }
+                return ResponseEntity.status(401).body("Invalid email/phone or password");
             }
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Login failed: " + e.getMessage());

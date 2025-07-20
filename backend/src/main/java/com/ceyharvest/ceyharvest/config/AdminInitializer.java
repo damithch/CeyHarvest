@@ -47,6 +47,7 @@ public class AdminInitializer implements CommandLineRunner {
                 admin.setEmail(email);
                 admin.setPassword(passwordEncoder.encode(adminSecurityConfig.getDefaultAdminPassword()));
                 admin.setRole("ADMIN");
+                admin.setEmailVerified(true); // Admins are pre-verified
                 adminRepository.save(admin);
                 System.out.println("Created admin account: " + email);
                 
@@ -55,6 +56,14 @@ public class AdminInitializer implements CommandLineRunner {
                     emailService.sendAdminWelcomeEmail(email, admin.getUsername(), adminSecurityConfig.getDefaultAdminPassword());
                 } catch (Exception e) {
                     System.err.println("Failed to send welcome email to " + email + ": " + e.getMessage());
+                }
+            } else {
+                // Ensure existing admin accounts are marked as verified
+                Admin existingAdmin = adminRepository.findByEmail(email).get();
+                if (!existingAdmin.isEmailVerified()) {
+                    existingAdmin.setEmailVerified(true);
+                    adminRepository.save(existingAdmin);
+                    System.out.println("Updated email verification status for admin: " + email);
                 }
             }
         }
