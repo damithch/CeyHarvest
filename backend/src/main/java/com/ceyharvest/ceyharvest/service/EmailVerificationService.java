@@ -140,13 +140,26 @@ public class EmailVerificationService {
      * Save user to appropriate repository based on type
      */
     private Object saveUserToDatabase(Object userData, String userType) {
+        LocalDateTime now = LocalDateTime.now();
+        
         switch (userType.toUpperCase()) {
             case "FARMER":
-                return farmerRepository.save((Farmer) userData);
+                Farmer farmer = (Farmer) userData;
+                farmer.setCreatedAt(now);
+                farmer.setUpdatedAt(now);
+                return farmerRepository.save(farmer);
             case "BUYER":
-                return buyerRepository.save((Buyer) userData);
+                Buyer buyer = (Buyer) userData;
+                if (buyer.getCreatedAt() == null) {
+                    buyer.setCreatedAt(now);
+                }
+                buyer.setUpdatedAt(now);
+                return buyerRepository.save(buyer);
             case "DRIVER":
-                return driverRepository.save((Driver) userData);
+                Driver driver = (Driver) userData;
+                driver.setCreatedAt(now);
+                driver.setUpdatedAt(now);
+                return driverRepository.save(driver);
             case "ADMIN":
                 return adminRepository.save((Admin) userData);
             default:

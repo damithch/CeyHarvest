@@ -178,6 +178,7 @@ public class ProfileController {
             farmer.setPostalCode(updates.get("postalCode"));
         }
 
+        farmer.setUpdatedAt(LocalDateTime.now());
         farmerRepository.save(farmer);
         return ResponseEntity.ok("Farmer profile updated successfully");
     }
@@ -237,6 +238,7 @@ public class ProfileController {
             driver.setPostalCode(updates.get("postalCode"));
         }
 
+        driver.setUpdatedAt(LocalDateTime.now());
         driverRepository.save(driver);
         return ResponseEntity.ok("Driver profile updated successfully");
     }

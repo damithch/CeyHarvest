@@ -7,5 +7,5 @@ import java.util.Optional;
 
 public interface DriverRepository extends MongoRepository<Driver, String> {
     Optional<Driver> findByEmail(String email);
-    Optional<Driver> findByPhoneNumber(String phoneNumber);
+    Optional<Driver> findFirstByPhoneNumber(String phoneNumber);
 } 
