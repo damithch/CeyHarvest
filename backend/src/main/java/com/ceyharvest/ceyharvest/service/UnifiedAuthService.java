@@ -2,7 +2,7 @@ package com.ceyharvest.ceyharvest.service;
 
 import com.ceyharvest.ceyharvest.document.*;
 import com.ceyharvest.ceyharvest.repository.*;
-import com.ceyharvest.ceyharvest.config.JwtTokenUtil;
+import com.ceyharvest.ceyharvest.util.JwtTokenUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
