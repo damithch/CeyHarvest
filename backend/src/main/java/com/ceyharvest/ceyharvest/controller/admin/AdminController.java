@@ -516,4 +516,203 @@ public class AdminController {
     private String nvl(Object value) {
         return value != null ? value.toString().replace("\"", "\"\"") : "";
     }
+
+    /**
+     * Delete a user by ID
+     */
+    @DeleteMapping("/users/{id}")
+    public ResponseEntity<?> deleteUser(@PathVariable String id) {
+        try {
+            // Check if user exists in any repository and delete
+            boolean deleted = false;
+            
+            // Try to find and delete from farmer repository
+            if (farmerRepository.existsById(id)) {
+                farmerRepository.deleteById(id);
+                deleted = true;
+            }
+            // Try to find and delete from buyer repository
+            else if (buyerRepository.existsById(id)) {
+                buyerRepository.deleteById(id);
+                deleted = true;
+            }
+            // Try to find and delete from driver repository
+            else if (driverRepository.existsById(id)) {
+                driverRepository.deleteById(id);
+                deleted = true;
+            }
+            // Try to find and delete from admin repository
+            else if (adminRepository.existsById(id)) {
+                adminRepository.deleteById(id);
+                deleted = true;
+            }
+            
+            if (deleted) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("message", "User deleted successfully");
+                response.put("deletedUserId", id);
+                return ResponseEntity.ok(response);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+            
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error deleting user: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Update a user by ID
+     */
+    @PutMapping("/users/{id}")
+    public ResponseEntity<?> updateUser(@PathVariable String id, @RequestBody Map<String, Object> updateData) {
+        try {
+            // Find user in appropriate repository and update
+            Optional<Farmer> farmer = farmerRepository.findById(id);
+            if (farmer.isPresent()) {
+                Farmer updatedFarmer = updateFarmerFromMap(farmer.get(), updateData);
+                farmerRepository.save(updatedFarmer);
+                return ResponseEntity.ok(convertFarmerToDetailedMap(updatedFarmer));
+            }
+            
+            Optional<Buyer> buyer = buyerRepository.findById(id);
+            if (buyer.isPresent()) {
+                Buyer updatedBuyer = updateBuyerFromMap(buyer.get(), updateData);
+                buyerRepository.save(updatedBuyer);
+                return ResponseEntity.ok(convertBuyerToDetailedMap(updatedBuyer));
+            }
+            
+            Optional<Driver> driver = driverRepository.findById(id);
+            if (driver.isPresent()) {
+                Driver updatedDriver = updateDriverFromMap(driver.get(), updateData);
+                driverRepository.save(updatedDriver);
+                return ResponseEntity.ok(convertDriverToDetailedMap(updatedDriver));
+            }
+            
+            Optional<Admin> admin = adminRepository.findById(id);
+            if (admin.isPresent()) {
+                Admin updatedAdmin = updateAdminFromMap(admin.get(), updateData);
+                adminRepository.save(updatedAdmin);
+                return ResponseEntity.ok(convertAdminToDetailedMap(updatedAdmin));
+            }
+            
+            return ResponseEntity.notFound().build();
+            
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error updating user: " + e.getMessage());
+        }
+    }
+
+    private Farmer updateFarmerFromMap(Farmer farmer, Map<String, Object> updateData) {
+        if (updateData.containsKey("firstName")) {
+            farmer.setFirstName((String) updateData.get("firstName"));
+        }
+        if (updateData.containsKey("lastName")) {
+            farmer.setLastName((String) updateData.get("lastName"));
+        }
+        if (updateData.containsKey("email")) {
+            farmer.setEmail((String) updateData.get("email"));
+        }
+        if (updateData.containsKey("phoneNumber")) {
+            farmer.setPhoneNumber((String) updateData.get("phoneNumber"));
+        }
+        if (updateData.containsKey("address")) {
+            farmer.setAddress((String) updateData.get("address"));
+        }
+        if (updateData.containsKey("city")) {
+            farmer.setCity((String) updateData.get("city"));
+        }
+        if (updateData.containsKey("postalCode")) {
+            farmer.setPostalCode((String) updateData.get("postalCode"));
+        }
+        if (updateData.containsKey("role")) {
+            farmer.setRole((String) updateData.get("role"));
+        }
+        if (updateData.containsKey("emailVerified")) {
+            farmer.setEmailVerified((Boolean) updateData.get("emailVerified"));
+        }
+        farmer.setUpdatedAt(LocalDateTime.now());
+        return farmer;
+    }
+
+    private Buyer updateBuyerFromMap(Buyer buyer, Map<String, Object> updateData) {
+        if (updateData.containsKey("firstName")) {
+            buyer.setFirstName((String) updateData.get("firstName"));
+        }
+        if (updateData.containsKey("lastName")) {
+            buyer.setLastName((String) updateData.get("lastName"));
+        }
+        if (updateData.containsKey("email")) {
+            buyer.setEmail((String) updateData.get("email"));
+        }
+        if (updateData.containsKey("phoneNumber")) {
+            buyer.setPhoneNumber((String) updateData.get("phoneNumber"));
+        }
+        if (updateData.containsKey("address")) {
+            buyer.setAddress((String) updateData.get("address"));
+        }
+        if (updateData.containsKey("city")) {
+            buyer.setCity((String) updateData.get("city"));
+        }
+        if (updateData.containsKey("postalCode")) {
+            buyer.setPostalCode((String) updateData.get("postalCode"));
+        }
+        if (updateData.containsKey("country")) {
+            buyer.setCountry((String) updateData.get("country"));
+        }
+        if (updateData.containsKey("role")) {
+            buyer.setRole((String) updateData.get("role"));
+        }
+        if (updateData.containsKey("emailVerified")) {
+            buyer.setEmailVerified((Boolean) updateData.get("emailVerified"));
+        }
+        buyer.setUpdatedAt(LocalDateTime.now());
+        return buyer;
+    }
+
+    private Driver updateDriverFromMap(Driver driver, Map<String, Object> updateData) {
+        if (updateData.containsKey("firstName")) {
+            driver.setFirstName((String) updateData.get("firstName"));
+        }
+        if (updateData.containsKey("lastName")) {
+            driver.setLastName((String) updateData.get("lastName"));
+        }
+        if (updateData.containsKey("email")) {
+            driver.setEmail((String) updateData.get("email"));
+        }
+        if (updateData.containsKey("phoneNumber")) {
+            driver.setPhoneNumber((String) updateData.get("phoneNumber"));
+        }
+        if (updateData.containsKey("address")) {
+            driver.setAddress((String) updateData.get("address"));
+        }
+        if (updateData.containsKey("city")) {
+            driver.setCity((String) updateData.get("city"));
+        }
+        if (updateData.containsKey("postalCode")) {
+            driver.setPostalCode((String) updateData.get("postalCode"));
+        }
+        if (updateData.containsKey("role")) {
+            driver.setRole((String) updateData.get("role"));
+        }
+        if (updateData.containsKey("emailVerified")) {
+            driver.setEmailVerified((Boolean) updateData.get("emailVerified"));
+        }
+        driver.setUpdatedAt(LocalDateTime.now());
+        return driver;
+    }
+
+    private Admin updateAdminFromMap(Admin admin, Map<String, Object> updateData) {
+        if (updateData.containsKey("email")) {
+            admin.setEmail((String) updateData.get("email"));
+        }
+        if (updateData.containsKey("role")) {
+            admin.setRole((String) updateData.get("role"));
+        }
+        if (updateData.containsKey("emailVerified")) {
+            admin.setEmailVerified((Boolean) updateData.get("emailVerified"));
+        }
+        admin.setUpdatedAt(LocalDateTime.now());
+        return admin;
+    }
 }

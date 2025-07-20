@@ -9,7 +9,12 @@ const UserManagement = ({ userType = 'ALL', onBack }) => {
   const [sortDir, setSortDir] = useState('desc');
   const [selectedUser, setSelectedUser] = useState(null);
   const [showUserDetails, setShowUserDetails] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [stats, setStats] = useState({});
+  const [successMessage, setSuccessMessage] = useState('');
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -68,6 +73,80 @@ const UserManagement = ({ userType = 'ALL', onBack }) => {
       }
     } catch (err) {
       console.error('Error fetching stats:', err);
+    }
+  };
+
+  const handleDeleteUser = async (userId) => {
+    setDeleteLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/admin/users/${userId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        setSuccessMessage('User deleted successfully');
+        setUsers(users.filter(user => user.id !== userId));
+        setShowDeleteModal(false);
+        setSelectedUser(null);
+        
+        // Refresh stats
+        fetchStats();
+        
+        // Clear success message after 3 seconds
+        setTimeout(() => setSuccessMessage(''), 3000);
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to delete user');
+      }
+    } catch (err) {
+      setError('Error deleting user: ' + err.message);
+      setTimeout(() => setError(''), 5000);
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  const handleUpdateUser = async (userData) => {
+    setEditLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/admin/users/${userData.id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(userData)
+      });
+
+      if (response.ok) {
+        const updatedUser = await response.json();
+        setSuccessMessage('User updated successfully');
+        
+        // Update the user in the local state
+        setUsers(users.map(user => 
+          user.id === updatedUser.id ? updatedUser : user
+        ));
+        
+        setShowEditModal(false);
+        setSelectedUser(null);
+        
+        // Clear success message after 3 seconds
+        setTimeout(() => setSuccessMessage(''), 3000);
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update user');
+      }
+    } catch (err) {
+      setError('Error updating user: ' + err.message);
+      setTimeout(() => setError(''), 5000);
+    } finally {
+      setEditLoading(false);
     }
   };
 
@@ -260,13 +339,254 @@ const UserManagement = ({ userType = 'ALL', onBack }) => {
             </div>
           </div>
           
-          <div className="mt-6 flex justify-end">
+          <div className="mt-6 flex justify-end space-x-3">
+            <button
+              onClick={() => {
+                setShowEditModal(true);
+                onClose();
+              }}
+              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+            >
+              Edit User
+            </button>
+            <button
+              onClick={() => {
+                setShowDeleteModal(true);
+                onClose();
+              }}
+              className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
+            >
+              Delete User
+            </button>
             <button
               onClick={onClose}
               className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
             >
               Close
             </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const EditUserModal = ({ user, onClose, onUpdate }) => {
+    const [formData, setFormData] = useState({
+      firstName: user?.firstName || '',
+      lastName: user?.lastName || '',
+      email: user?.email || '',
+      phoneNumber: user?.phoneNumber || '',
+      address: user?.address || '',
+      city: user?.city || '',
+      postalCode: user?.postalCode || '',
+      country: user?.country || '',
+      role: user?.role || '',
+      emailVerified: user?.emailVerified || false
+    });
+
+    if (!user) return null;
+
+    const handleSubmit = (e) => {
+      e.preventDefault();
+      onUpdate({
+        id: user.id,
+        ...formData
+      });
+    };
+
+    const handleChange = (e) => {
+      const { name, value, type, checked } = e.target;
+      setFormData(prev => ({
+        ...prev,
+        [name]: type === 'checkbox' ? checked : value
+      }));
+    };
+
+    return (
+      <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div className="relative top-10 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-medium text-gray-900">
+              Edit User - {user.fullName || user.username}
+            </h3>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600"
+            >
+              <span className="sr-only">Close</span>
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">First Name</label>
+                <input
+                  type="text"
+                  name="firstName"
+                  value={formData.firstName}
+                  onChange={handleChange}
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Last Name</label>
+                <input
+                  type="text"
+                  name="lastName"
+                  value={formData.lastName}
+                  onChange={handleChange}
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Email</label>
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Phone Number</label>
+                <input
+                  type="tel"
+                  name="phoneNumber"
+                  value={formData.phoneNumber}
+                  onChange={handleChange}
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700">Address</label>
+                <textarea
+                  name="address"
+                  value={formData.address}
+                  onChange={handleChange}
+                  rows={2}
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">City</label>
+                <input
+                  type="text"
+                  name="city"
+                  value={formData.city}
+                  onChange={handleChange}
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Postal Code</label>
+                <input
+                  type="text"
+                  name="postalCode"
+                  value={formData.postalCode}
+                  onChange={handleChange}
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Country</label>
+                <input
+                  type="text"
+                  name="country"
+                  value={formData.country}
+                  onChange={handleChange}
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Role</label>
+                <select
+                  name="role"
+                  value={formData.role}
+                  onChange={handleChange}
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="FARMER">FARMER</option>
+                  <option value="BUYER">BUYER</option>
+                  <option value="DRIVER">DRIVER</option>
+                  <option value="ADMIN">ADMIN</option>
+                </select>
+              </div>
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  name="emailVerified"
+                  checked={formData.emailVerified}
+                  onChange={handleChange}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <label className="ml-2 block text-sm text-gray-700">
+                  Email Verified
+                </label>
+              </div>
+            </div>
+            
+            <div className="mt-6 flex justify-end space-x-3">
+              <button
+                type="button"
+                onClick={onClose}
+                className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={editLoading}
+                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
+              >
+                {editLoading ? 'Updating...' : 'Update User'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  };
+
+  const DeleteConfirmModal = ({ user, onClose, onConfirm }) => {
+    if (!user) return null;
+
+    return (
+      <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+          <div className="mt-3 text-center">
+            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+              <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.96-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <h3 className="text-lg leading-6 font-medium text-gray-900 mt-2">Delete User</h3>
+            <div className="mt-2 px-7 py-3">
+              <p className="text-sm text-gray-500">
+                Are you sure you want to delete user <strong>{user.fullName || user.username}</strong>?
+                This action cannot be undone and will permanently remove all user data.
+              </p>
+            </div>
+            <div className="flex justify-center space-x-3 mt-4">
+              <button
+                onClick={onClose}
+                className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => onConfirm(user.id)}
+                disabled={deleteLoading}
+                className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
+              >
+                {deleteLoading ? 'Deleting...' : 'Delete User'}
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -292,6 +612,14 @@ const UserManagement = ({ userType = 'ALL', onBack }) => {
 
   return (
     <div className="space-y-6">
+      {/* Success Message */}
+      {successMessage && (
+        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
+          <strong className="font-bold">Success!</strong>
+          <span className="block sm:inline"> {successMessage}</span>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
@@ -461,15 +789,35 @@ const UserManagement = ({ userType = 'ALL', onBack }) => {
                     {formatDate(user.createdAt)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button
-                      onClick={() => {
-                        setSelectedUser(user);
-                        setShowUserDetails(true);
-                      }}
-                      className="text-blue-600 hover:text-blue-900"
-                    >
-                      View Details
-                    </button>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => {
+                          setSelectedUser(user);
+                          setShowUserDetails(true);
+                        }}
+                        className="text-blue-600 hover:text-blue-900"
+                      >
+                        View
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSelectedUser(user);
+                          setShowEditModal(true);
+                        }}
+                        className="text-green-600 hover:text-green-900"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSelectedUser(user);
+                          setShowDeleteModal(true);
+                        }}
+                        className="text-red-600 hover:text-red-900"
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -492,6 +840,30 @@ const UserManagement = ({ userType = 'ALL', onBack }) => {
             setShowUserDetails(false);
             setSelectedUser(null);
           }}
+        />
+      )}
+
+      {/* Edit User Modal */}
+      {showEditModal && (
+        <EditUserModal 
+          user={selectedUser}
+          onClose={() => {
+            setShowEditModal(false);
+            setSelectedUser(null);
+          }}
+          onUpdate={handleUpdateUser}
+        />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <DeleteConfirmModal 
+          user={selectedUser}
+          onClose={() => {
+            setShowDeleteModal(false);
+            setSelectedUser(null);
+          }}
+          onConfirm={handleDeleteUser}
         />
       )}
     </div>
