@@ -20,4 +20,7 @@ public class Product {
     private int quantity;
     private String category;
     private String imageBase64;
+    private String grade;
+    private String location;
+    private String harvestDate;
 }

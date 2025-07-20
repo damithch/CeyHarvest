@@ -1,6 +1,7 @@
 package com.ceyharvest.ceyharvest.controller.farmer;
 
 import com.ceyharvest.ceyharvest.document.Product;
+import com.ceyharvest.ceyharvest.dto.ProductCreateDTO;
 import com.ceyharvest.ceyharvest.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -44,6 +45,49 @@ public class FarmerProductController {
         return ResponseEntity.ok(saved);
     }
 
+    // Add Product with JSON data (for AddProductForm)
+    @PostMapping(value = "/add", consumes = {"application/json"})
+    public ResponseEntity<?> addProductJson(
+            @PathVariable String farmerId,
+            @RequestBody ProductCreateDTO productDTO
+    ) {
+        try {
+            // Validate required fields
+            if (productDTO.getProductName() == null || productDTO.getProductName().trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("Product name is required");
+            }
+            if (productDTO.getLocation() == null || productDTO.getLocation().trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("Location is required");
+            }
+            if (productDTO.getQuantity() <= 0) {
+                return ResponseEntity.badRequest().body("Quantity must be greater than 0");
+            }
+            if (productDTO.getPrice() <= 0) {
+                return ResponseEntity.badRequest().body("Price must be greater than 0");
+            }
+            if (productDTO.getHarvestDate() == null || productDTO.getHarvestDate().trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("Harvest date is required");
+            }
+            
+            Product product = new Product();
+            product.setId(null);
+            product.setFarmerId(farmerId);
+            product.setName(productDTO.getProductName());
+            product.setDescription(productDTO.getDescription() != null ? productDTO.getDescription() : "");
+            product.setPrice(productDTO.getPrice());
+            product.setQuantity((int) productDTO.getQuantity());
+            product.setCategory("Agricultural"); // Default category
+            product.setGrade(productDTO.getGrade());
+            product.setLocation(productDTO.getLocation());
+            product.setHarvestDate(productDTO.getHarvestDate());
+            
+            Product saved = productRepository.save(product);
+            return ResponseEntity.ok(saved);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Failed to add product: " + e.getMessage());
+        }
+    }
+
     // Update Product with image upload
     @PutMapping(value = "/{productId}", consumes = {"multipart/form-data"})
     public ResponseEntity<?> updateProduct(
@@ -73,7 +117,31 @@ public class FarmerProductController {
         return ResponseEntity.ok(updated);
     }
 
+    // Update a single product entry by productId
+    @PutMapping("/{productId}")
+    public ResponseEntity<?> updateProductEntry(
+            @PathVariable String farmerId,
+            @PathVariable String productId,
+            @RequestBody ProductCreateDTO productDTO
+    ) {
+        Optional<Product> existing = productRepository.findById(productId);
+        if (existing.isEmpty() || !existing.get().getFarmerId().equals(farmerId)) {
+            return ResponseEntity.notFound().build();
+        }
+        Product toUpdate = existing.get();
+        toUpdate.setName(productDTO.getProductName());
+        toUpdate.setDescription(productDTO.getDescription() != null ? productDTO.getDescription() : "");
+        toUpdate.setPrice(productDTO.getPrice());
+        toUpdate.setQuantity((int) productDTO.getQuantity());
+        toUpdate.setGrade(productDTO.getGrade());
+        toUpdate.setLocation(productDTO.getLocation());
+        toUpdate.setHarvestDate(productDTO.getHarvestDate());
+        Product updated = productRepository.save(toUpdate);
+        return ResponseEntity.ok(updated);
+    }
+
     // Delete Product
+     /* 
     @DeleteMapping("/{productId}")
     public ResponseEntity<?> deleteProduct(@PathVariable String farmerId, @PathVariable String productId) {
         Optional<Product> existing = productRepository.findById(productId);
@@ -82,6 +150,20 @@ public class FarmerProductController {
         }
         productRepository.deleteById(productId);
         return ResponseEntity.ok().build();
+    }
+       */   
+    // Delete a single product entry by productId
+    @DeleteMapping("/{productId}")
+    public ResponseEntity<?> deleteProductEntry(
+            @PathVariable String farmerId,
+            @PathVariable String productId
+    ) {
+        Optional<Product> existing = productRepository.findById(productId);
+        if (existing.isEmpty() || !existing.get().getFarmerId().equals(farmerId)) {
+            return ResponseEntity.notFound().build();
+        }
+        productRepository.deleteById(productId);
+        return ResponseEntity.ok().body("Product entry deleted successfully");
     }
 
     // List All Products for Farmer
@@ -99,5 +181,25 @@ public class FarmerProductController {
             return ResponseEntity.ok(product.get());
         }
         return ResponseEntity.notFound().build();
+    }
+
+    // Get all products for a farmer by category (productName), sorted by harvestDate descending
+    @GetMapping("/category/{productName}")
+    public ResponseEntity<List<Product>> getProductsByCategory(
+            @PathVariable String farmerId,
+            @PathVariable String productName
+    ) {
+        List<Product> products = productRepository.findByFarmerIdAndNameOrderByHarvestDateDesc(farmerId, productName);
+        return ResponseEntity.ok(products);
+    }
+
+    // Delete all products for a farmer by category (productName)
+    @DeleteMapping("/category/{productName}")
+    public ResponseEntity<?> deleteCategory(
+            @PathVariable String farmerId,
+            @PathVariable String productName
+    ) {
+        productRepository.deleteByFarmerIdAndName(farmerId, productName);
+        return ResponseEntity.ok().body("Category deleted successfully");
     }
 }
