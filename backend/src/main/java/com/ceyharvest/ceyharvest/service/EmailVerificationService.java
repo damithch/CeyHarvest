@@ -140,15 +140,33 @@ public class EmailVerificationService {
      * Save user to appropriate repository based on type
      */
     private Object saveUserToDatabase(Object userData, String userType) {
+        LocalDateTime now = LocalDateTime.now();
+        
         switch (userType.toUpperCase()) {
             case "FARMER":
-                return farmerRepository.save((Farmer) userData);
+                Farmer farmer = (Farmer) userData;
+                farmer.setEmailVerified(true); // Mark email as verified
+                farmer.setCreatedAt(now);
+                farmer.setUpdatedAt(now);
+                return farmerRepository.save(farmer);
             case "BUYER":
-                return buyerRepository.save((Buyer) userData);
+                Buyer buyer = (Buyer) userData;
+                buyer.setEmailVerified(true); // Mark email as verified
+                if (buyer.getCreatedAt() == null) {
+                    buyer.setCreatedAt(now);
+                }
+                buyer.setUpdatedAt(now);
+                return buyerRepository.save(buyer);
             case "DRIVER":
-                return driverRepository.save((Driver) userData);
+                Driver driver = (Driver) userData;
+                driver.setEmailVerified(true); // Mark email as verified
+                driver.setCreatedAt(now);
+                driver.setUpdatedAt(now);
+                return driverRepository.save(driver);
             case "ADMIN":
-                return adminRepository.save((Admin) userData);
+                Admin admin = (Admin) userData;
+                admin.setEmailVerified(true); // Mark email as verified
+                return adminRepository.save(admin);
             default:
                 throw new IllegalArgumentException("Unknown user type: " + userType);
         }
@@ -158,64 +176,79 @@ public class EmailVerificationService {
      * Build verification email content
      */
     private String buildVerificationEmail(String code, String userType) {
-        return String.format("""
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <style>
-                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-                    .header { background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-                    .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
-                    .code-box { background: #fff; border: 2px solid #10b981; border-radius: 8px; padding: 20px; text-align: center; margin: 20px 0; }
-                    .code { font-size: 32px; font-weight: bold; color: #10b981; letter-spacing: 5px; }
-                    .footer { text-align: center; margin-top: 20px; color: #666; font-size: 14px; }
-                    .warning { background: #fef3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin: 20px 0; }
-                </style>
-            </head>
-            <body>
-                <div class="container">
-                    <div class="header">
-                        <h1>🌱 CeyHarvest</h1>
-                        <h2>Email Verification Required</h2>
-                    </div>
-                    <div class="content">
-                        <h3>Welcome to CeyHarvest!</h3>
-                        <p>Thank you for registering as a <strong>%s</strong> on CeyHarvest - Sri Lanka's premier agricultural marketplace!</p>
-                        
-                        <p>To complete your registration, please use the verification code below:</p>
-                        
-                        <div class="code-box">
-                            <div class="code">%s</div>
-                            <p>Enter this code in the verification form</p>
-                        </div>
-                        
-                        <div class="warning">
-                            <strong>⚠️ Important:</strong>
-                            <ul>
-                                <li>This code expires in <strong>15 minutes</strong></li>
-                                <li>Do not share this code with anyone</li>
-                                <li>If you didn't request this, please ignore this email</li>
-                            </ul>
-                        </div>
-                        
-                        <p>Once verified, you'll be able to:</p>
-                        <ul>
-                            <li>🌾 Access the full CeyHarvest platform</li>
-                            <li>🛒 Connect with buyers and sellers</li>
-                            <li>📱 Manage your agricultural business</li>
-                            <li>🚚 Coordinate deliveries and logistics</li>
-                        </ul>
-                        
-                        <p>Welcome to the future of Sri Lankan agriculture!</p>
-                    </div>
-                    <div class="footer">
-                        <p>CeyHarvest - Connecting Sri Lankan Agriculture<br>
-                        This is an automated email, please do not reply.</p>
-                    </div>
-                </div>
-            </body>
-            </html>
-            """, userType, code);
+        // Build HTML email with proper escaping
+        StringBuilder html = new StringBuilder();
+        html.append("<!DOCTYPE html>");
+        html.append("<html>");
+        html.append("<head>");
+        html.append("<meta charset=\"UTF-8\">");
+        html.append("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">");
+        html.append("<style>");
+        html.append("body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 20px; background-color: #f4f4f4; }");
+        html.append(".container { max-width: 600px; margin: 0 auto; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 0 10px rgba(0,0,0,0.1); }");
+        html.append(".header { background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 30px; text-align: center; }");
+        html.append(".header h1 { margin: 0; font-size: 24px; }");
+        html.append(".header h2 { margin: 10px 0 0 0; font-size: 18px; font-weight: normal; }");
+        html.append(".content { padding: 30px; }");
+        html.append(".code-box { background: #f8f9fa; border: 2px solid #10b981; border-radius: 8px; padding: 20px; text-align: center; margin: 20px 0; }");
+        html.append(".code { font-size: 36px; font-weight: bold; color: #10b981; letter-spacing: 8px; font-family: 'Courier New', monospace; margin: 10px 0; }");
+        html.append(".footer { text-align: center; padding: 20px; color: #666; font-size: 14px; background: #f8f9fa; }");
+        html.append(".warning { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; }");
+        html.append("ul { margin: 10px 0; padding-left: 20px; }");
+        html.append("</style>");
+        html.append("</head>");
+        html.append("<body>");
+        html.append("<div class=\"container\">");
+        
+        // Header
+        html.append("<div class=\"header\">");
+        html.append("<h1>🌱 CeyHarvest</h1>");
+        html.append("<h2>Email Verification Required</h2>");
+        html.append("</div>");
+        
+        // Content
+        html.append("<div class=\"content\">");
+        html.append("<h3>Welcome to CeyHarvest!</h3>");
+        html.append("<p>Thank you for registering as a <strong>").append(userType).append("</strong> on CeyHarvest - Sri Lanka's premier agricultural marketplace!</p>");
+        html.append("<p>To complete your registration, please use the verification code below:</p>");
+        
+        // Code box
+        html.append("<div class=\"code-box\">");
+        html.append("<div class=\"code\">").append(code).append("</div>");
+        html.append("<p><strong>Enter this code in the verification form</strong></p>");
+        html.append("</div>");
+        
+        // Warning
+        html.append("<div class=\"warning\">");
+        html.append("<strong>⚠️ Important Security Information:</strong>");
+        html.append("<ul>");
+        html.append("<li>This code expires in <strong>15 minutes</strong></li>");
+        html.append("<li>Do not share this code with anyone</li>");
+        html.append("<li>If you didn't request this, please ignore this email</li>");
+        html.append("</ul>");
+        html.append("</div>");
+        
+        // Benefits
+        html.append("<p><strong>Once verified, you'll be able to:</strong></p>");
+        html.append("<ul>");
+        html.append("<li>🌾 Access the full CeyHarvest platform</li>");
+        html.append("<li>🛒 Connect with buyers and sellers</li>");
+        html.append("<li>📱 Manage your agricultural business</li>");
+        html.append("<li>🚚 Coordinate deliveries and logistics</li>");
+        html.append("</ul>");
+        html.append("<p>Welcome to the future of Sri Lankan agriculture!</p>");
+        html.append("</div>");
+        
+        // Footer
+        html.append("<div class=\"footer\">");
+        html.append("<p><strong>CeyHarvest</strong> - Connecting Sri Lankan Agriculture<br>");
+        html.append("This is an automated email, please do not reply.</p>");
+        html.append("</div>");
+        
+        html.append("</div>");
+        html.append("</body>");
+        html.append("</html>");
+        
+        return html.toString();
     }
 }

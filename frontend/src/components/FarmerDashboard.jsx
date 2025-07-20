@@ -118,7 +118,7 @@ const FarmerDashboard = () => {
           />
           <StatCard
             title="Total Revenue"
-            value={`$${stats.totalRevenue}`}
+            value={`LKR ${stats.totalRevenue}`}
             icon="💰"
             color="text-yellow-600"
           />
@@ -184,7 +184,7 @@ const FarmerDashboard = () => {
                           {product.name}
                         </div>
                         <div className="text-sm text-gray-500">
-                          Price: ${product.price} | Stock: {product.stock}
+                          Price: LKR {product.price} | Stock: {product.stock}
                         </div>
                       </div>
                     </div>

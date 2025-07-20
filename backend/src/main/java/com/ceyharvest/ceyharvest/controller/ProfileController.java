@@ -6,10 +6,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -28,6 +28,9 @@ public class ProfileController {
     
     @Autowired
     private DriverRepository driverRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     /**
      * Unified profile update endpoint for all user types
@@ -75,6 +78,74 @@ public class ProfileController {
         }
     }
 
+    /**
+     * Unified password change endpoint for all user types
+     */
+    @PutMapping("/change-password")
+    public ResponseEntity<?> changePassword(@RequestBody Map<String, String> passwordData) {
+        try {
+            // Get current authenticated user
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            String currentUserEmail = auth.getName();
+            
+            System.out.println("=== PASSWORD CHANGE DEBUG ===");
+            System.out.println("Current user email: " + currentUserEmail);
+            System.out.println("Password data keys: " + passwordData.keySet());
+            
+            if (currentUserEmail == null) {
+                return ResponseEntity.status(401).body(Map.of("error", "User not authenticated"));
+            }
+
+            String currentPassword = passwordData.get("currentPassword");
+            String newPassword = passwordData.get("newPassword");
+
+            if (currentPassword == null || newPassword == null) {
+                return ResponseEntity.status(400).body(Map.of("error", "Current password and new password are required"));
+            }
+
+            if (newPassword.length() < 6) {
+                return ResponseEntity.status(400).body(Map.of("error", "New password must be at least 6 characters long"));
+            }
+
+            // Try to find user in each repository and change password accordingly
+            // Check Admin
+            Optional<Admin> adminOpt = adminRepository.findByEmail(currentUserEmail);
+            if (adminOpt.isPresent()) {
+                System.out.println("Found admin user");
+                return changeAdminPassword(adminOpt.get(), currentPassword, newPassword);
+            }
+
+            // Check Farmer
+            Optional<Farmer> farmerOpt = farmerRepository.findByEmail(currentUserEmail);
+            if (farmerOpt.isPresent()) {
+                System.out.println("Found farmer user");
+                return changeFarmerPassword(farmerOpt.get(), currentPassword, newPassword);
+            }
+
+            // Check Buyer
+            Optional<Buyer> buyerOpt = buyerRepository.findByEmail(currentUserEmail);
+            if (buyerOpt.isPresent()) {
+                System.out.println("Found buyer user");
+                return changeBuyerPassword(buyerOpt.get(), currentPassword, newPassword);
+            }
+
+            // Check Driver
+            Optional<Driver> driverOpt = driverRepository.findByEmail(currentUserEmail);
+            if (driverOpt.isPresent()) {
+                System.out.println("Found driver user");
+                return changeDriverPassword(driverOpt.get(), currentPassword, newPassword);
+            }
+
+            System.out.println("User not found in any repository");
+            return ResponseEntity.status(404).body(Map.of("error", "User not found"));
+
+        } catch (Exception e) {
+            System.out.println("Exception in password change: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("error", "Error changing password: " + e.getMessage()));
+        }
+    }
+
     private ResponseEntity<?> updateAdminProfile(Admin admin, Map<String, String> updates) {
         // Admin only has basic fields: username, password, email, role
         // Only allow username updates for admins
@@ -107,6 +178,7 @@ public class ProfileController {
             farmer.setPostalCode(updates.get("postalCode"));
         }
 
+        farmer.setUpdatedAt(LocalDateTime.now());
         farmerRepository.save(farmer);
         return ResponseEntity.ok("Farmer profile updated successfully");
     }
@@ -166,7 +238,45 @@ public class ProfileController {
             driver.setPostalCode(updates.get("postalCode"));
         }
 
+        driver.setUpdatedAt(LocalDateTime.now());
         driverRepository.save(driver);
         return ResponseEntity.ok("Driver profile updated successfully");
+    }
+
+    // Password change helper methods
+    private ResponseEntity<?> changeAdminPassword(Admin admin, String currentPassword, String newPassword) {
+        if (!passwordEncoder.matches(currentPassword, admin.getPassword())) {
+            return ResponseEntity.status(400).body(Map.of("error", "Current password is incorrect"));
+        }
+        admin.setPassword(passwordEncoder.encode(newPassword));
+        adminRepository.save(admin);
+        return ResponseEntity.ok(Map.of("message", "Admin password changed successfully"));
+    }
+
+    private ResponseEntity<?> changeFarmerPassword(Farmer farmer, String currentPassword, String newPassword) {
+        if (!passwordEncoder.matches(currentPassword, farmer.getPassword())) {
+            return ResponseEntity.status(400).body(Map.of("error", "Current password is incorrect"));
+        }
+        farmer.setPassword(passwordEncoder.encode(newPassword));
+        farmerRepository.save(farmer);
+        return ResponseEntity.ok(Map.of("message", "Farmer password changed successfully"));
+    }
+
+    private ResponseEntity<?> changeBuyerPassword(Buyer buyer, String currentPassword, String newPassword) {
+        if (!passwordEncoder.matches(currentPassword, buyer.getPassword())) {
+            return ResponseEntity.status(400).body(Map.of("error", "Current password is incorrect"));
+        }
+        buyer.setPassword(passwordEncoder.encode(newPassword));
+        buyerRepository.save(buyer);
+        return ResponseEntity.ok(Map.of("message", "Buyer password changed successfully"));
+    }
+
+    private ResponseEntity<?> changeDriverPassword(Driver driver, String currentPassword, String newPassword) {
+        if (!passwordEncoder.matches(currentPassword, driver.getPassword())) {
+            return ResponseEntity.status(400).body(Map.of("error", "Current password is incorrect"));
+        }
+        driver.setPassword(passwordEncoder.encode(newPassword));
+        driverRepository.save(driver);
+        return ResponseEntity.ok(Map.of("message", "Driver password changed successfully"));
     }
 }

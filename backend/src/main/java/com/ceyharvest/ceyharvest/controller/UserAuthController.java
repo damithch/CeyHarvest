@@ -57,13 +57,13 @@ public class UserAuthController {
         
         // Check phone number duplicates across all user types (if phone number provided)
         if (phoneNumber != null && !phoneNumber.isEmpty()) {
-            if (farmerRepository.findByPhoneNumber(phoneNumber).isPresent()) {
+            if (farmerRepository.findFirstByPhoneNumber(phoneNumber).isPresent()) {
                 return ResponseEntity.status(409).body("Phone number already registered as farmer");
             }
-            if (buyerRepository.findByPhoneNumber(phoneNumber).isPresent()) {
+            if (buyerRepository.findFirstByPhoneNumber(phoneNumber).isPresent()) {
                 return ResponseEntity.status(409).body("Phone number already registered as buyer");
             }
-            if (driverRepository.findByPhoneNumber(phoneNumber).isPresent()) {
+            if (driverRepository.findFirstByPhoneNumber(phoneNumber).isPresent()) {
                 return ResponseEntity.status(409).body("Phone number already registered as driver");
             }
         }

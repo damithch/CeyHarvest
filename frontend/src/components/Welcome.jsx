@@ -36,7 +36,7 @@ const Welcome = () => {
             <div className="space-y-1">
               <p>🌾 <strong>Farmers:</strong> Sell your products directly</p>
               <p>🛒 <strong>Buyers:</strong> Source fresh agricultural products</p>
-              <p>⚙️ <strong>Admin:</strong> System management (contact administrator)</p>
+              <p>🚚 <strong>Drivers:</strong> Provide delivery and transportation services</p>
             </div>
           </div>
         </div>
