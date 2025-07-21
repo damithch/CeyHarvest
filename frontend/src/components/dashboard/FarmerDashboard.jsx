@@ -1,7 +1,53 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import DashboardLayout from '../layout/DashboardLayout';
 import AddProductForm from '../farmer/AddProductForm';
+import toast, { Toaster } from 'react-hot-toast';
+import { InformationCircleIcon, PencilSquareIcon, TrashIcon, PlusCircleIcon } from '@heroicons/react/24/outline';
+
+// Modal component for reuse
+function Modal({ open, onClose, children }) {
+  React.useEffect(() => {
+    if (!open) return;
+    const handleEsc = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [open, onClose]);
+
+  if (!open) return null;
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center transition-all"
+      style={{ backdropFilter: 'blur(4px)' }}
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-2xl shadow-2xl p-6 max-w-2xl w-full relative animate-fadeInUp"
+        onClick={e => e.stopPropagation()}
+      >
+        {children}
+        <button
+          className="absolute top-3 right-3 text-gray-400 hover:text-red-600 text-2xl font-bold focus:outline-none"
+          onClick={onClose}
+          aria-label="Close"
+        >
+          &times;
+        </button>
+      </div>
+      <style>{`
+        .animate-fadeInUp {
+          animation: fadeInUp 0.3s cubic-bezier(0.4,0,0.2,1);
+        }
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(40px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
+    </div>
+  );
+}
 
 const FarmerDashboard = () => {
   const { user, getAuthHeaders } = useAuth();
@@ -19,12 +65,12 @@ const FarmerDashboard = () => {
   const [editEntry, setEditEntry] = useState(null);
   const [editForm, setEditForm] = useState({});
   const [loading, setLoading] = useState(false);
+  const [pageLoading, setPageLoading] = useState(true);
 
   useEffect(() => {
     if (user && user.id) {
-      fetchProducts();
-      fetchOrders();
-      fetchStats();
+      setPageLoading(true);
+      Promise.all([fetchProducts(), fetchOrders(), fetchStats()]).finally(() => setPageLoading(false));
     }
   }, [user]);
 
@@ -125,11 +171,12 @@ const FarmerDashboard = () => {
     });
     setLoading(false);
     if (response.ok) {
+      toast.success('Category deleted successfully');
       setSelectedCategory(null);
       setCategoryProducts([]);
       fetchProducts();
     } else {
-      alert('Failed to delete category');
+      toast.error('Failed to delete category');
     }
   };
 
@@ -146,10 +193,11 @@ const FarmerDashboard = () => {
     });
     setLoading(false);
     if (response.ok) {
+      toast.success('Entry deleted successfully');
       setCategoryProducts((prev) => prev.filter((p) => p.id !== productId));
       fetchProducts();
     } else {
-      alert('Failed to delete entry');
+      toast.error('Failed to delete entry');
     }
   };
 
@@ -182,11 +230,12 @@ const FarmerDashboard = () => {
     setLoading(false);
     if (response.ok) {
       const updated = await response.json();
+      toast.success('Entry updated successfully');
       setCategoryProducts((prev) => prev.map((p) => p.id === updated.id ? updated : p));
       fetchProducts();
       setEditEntry(null);
     } else {
-      alert('Failed to update entry');
+      toast.error('Failed to update entry');
     }
   };
 
@@ -214,99 +263,114 @@ const FarmerDashboard = () => {
 
   return (
     <DashboardLayout title="Farmer Dashboard">
-      <div className="space-y-6">
+      <Toaster position="top-right" />
+      {pageLoading && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white bg-opacity-70">
+          <span className="loader w-8 h-8 border-4 border-blue-300 border-t-blue-600"></span>
+        </div>
+      )}
+      <div className="space-y-8 px-2 md:px-8 py-4">
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatCard
             title="My Products"
             value={stats.totalProducts}
-            icon="🌽"
-            color="text-green-600"
+            icon={<PlusCircleIcon className="w-7 h-7 text-green-600" />}
+            color=""
           />
           <StatCard
             title="Total Orders"
             value={stats.totalOrders}
-            icon="📦"
-            color="text-blue-600"
+            icon={<InformationCircleIcon className="w-7 h-7 text-blue-600" />}
+            color=""
           />
           <StatCard
             title="Total Revenue"
             value={`LKR ${stats.totalRevenue}`}
-            icon="💰"
-            color="text-yellow-600"
+            icon={<span className="text-yellow-600">💰</span>}
+            color=""
           />
           <StatCard
             title="Pending Orders"
             value={stats.pendingOrders}
-            icon="⏳"
-            color="text-red-600"
+            icon={<span className="text-red-600">⏳</span>}
+            color=""
           />
         </div>
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Product Management</h3>
-            <div className="space-y-3">
-              <button 
-                className="w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+          <div className="bg-white p-6 rounded-2xl shadow flex flex-col gap-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center gap-2">
+              <PlusCircleIcon className="w-5 h-5 text-green-600" /> Product Management
+            </h3>
+            <div className="flex flex-col gap-3">
+              <button
+                className="w-full bg-green-600 text-white px-4 py-2 rounded-lg shadow hover:bg-green-700 focus:ring-2 focus:ring-green-400 font-semibold flex items-center gap-2 transition"
                 onClick={() => setShowAddProductForm(true)}
               >
-                Add New Product
+                <PlusCircleIcon className="w-5 h-5" /> Add New Product
               </button>
-              <button className="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-                View My Products
+              <button className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 focus:ring-2 focus:ring-blue-400 font-semibold flex items-center gap-2 transition">
+                <InformationCircleIcon className="w-5 h-5" /> View My Products
               </button>
-              <button className="w-full bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700">
-                Update Inventory
+              <button className="w-full bg-yellow-600 text-white px-4 py-2 rounded-lg shadow hover:bg-yellow-700 focus:ring-2 focus:ring-yellow-400 font-semibold flex items-center gap-2 transition">
+                <PencilSquareIcon className="w-5 h-5" /> Update Inventory
               </button>
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Order Management</h3>
-            <div className="space-y-3">
-              <button className="w-full bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700">
-                View All Orders
+          <div className="bg-white p-6 rounded-2xl shadow flex flex-col gap-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center gap-2">
+              <InformationCircleIcon className="w-5 h-5 text-purple-600" /> Order Management
+            </h3>
+            <div className="flex flex-col gap-3">
+              <button className="w-full bg-purple-600 text-white px-4 py-2 rounded-lg shadow hover:bg-purple-700 focus:ring-2 focus:ring-purple-400 font-semibold flex items-center gap-2 transition">
+                <InformationCircleIcon className="w-5 h-5" /> View All Orders
               </button>
-              <button className="w-full bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700">
-                Pending Orders
+              <button className="w-full bg-orange-600 text-white px-4 py-2 rounded-lg shadow hover:bg-orange-700 focus:ring-2 focus:ring-orange-400 font-semibold flex items-center gap-2 transition">
+                <InformationCircleIcon className="w-5 h-5" /> Pending Orders
               </button>
-              <button className="w-full bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">
-                Order History
+              <button className="w-full bg-indigo-600 text-white px-4 py-2 rounded-lg shadow hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-400 font-semibold flex items-center gap-2 transition">
+                <InformationCircleIcon className="w-5 h-5" /> Order History
               </button>
             </div>
           </div>
         </div>
 
         {/* Recent Products - Grouped by Category */}
-        <div className="bg-white shadow overflow-hidden sm:rounded-md">
-          <div className="px-4 py-5 sm:px-6">
-            <h3 className="text-lg leading-6 font-medium text-gray-900">
-              Recent Products
-            </h3>
-            <p className="mt-1 max-w-2xl text-sm text-gray-500">
-              Your product categories
-            </p>
+        <div className="bg-white shadow rounded-2xl overflow-hidden">
+          <div className="px-4 py-5 sm:px-6 flex items-center justify-between">
+            <div>
+              <h3 className="text-xl leading-6 font-bold text-gray-900 mb-1">Recent Products</h3>
+              <p className="max-w-2xl text-sm text-gray-500">Your product categories</p>
+            </div>
+            <button
+              className="bg-green-100 text-green-700 px-3 py-1 rounded-lg flex items-center gap-1 hover:bg-green-200 transition"
+              onClick={() => setShowAddProductForm(true)}
+              title="Add New Product"
+            >
+              <PlusCircleIcon className="w-5 h-5" /> Add
+            </button>
           </div>
           <ul className="divide-y divide-gray-200">
             {Object.keys(groupedProducts).length > 0 ? (
               Object.keys(groupedProducts).map((category) => {
                 const { totalStock, latestPrice } = getCategoryStats(groupedProducts[category]);
                 return (
-                  <li key={category} className="px-4 py-4 sm:px-6 cursor-pointer hover:bg-gray-50" onClick={() => handleCategoryClick(category)}>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <span className="text-2xl mr-2">{category.split(' ')[1] || '🍃'}</span>
-                        <div className="ml-2">
-                          <div className="text-sm font-medium text-gray-900">{category}</div>
-                          <div className="text-xs text-gray-500">{groupedProducts[category].length} entries</div>
-                        </div>
+                  <li key={category} className="px-4 py-4 sm:px-6 cursor-pointer hover:bg-green-50 transition rounded flex items-center justify-between" onClick={() => handleCategoryClick(category)} title={`View details for ${category}`}>
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl mr-2">{category.split(' ')[1] || '🍃'}</span>
+                      <div className="ml-2">
+                        <div className="text-base font-semibold text-gray-900">{category}</div>
+                        <div className="text-xs text-gray-500">{groupedProducts[category].length} entries</div>
                       </div>
-                      <div className="text-sm text-gray-700 font-semibold">
-                        📦 {totalStock}kg &nbsp; | &nbsp; 💰 Rs. {latestPrice}/kg
-                      </div>
-                      <div className="text-sm text-gray-500 ml-4">View Details →</div>
+                    </div>
+                    <div className="text-sm text-gray-700 font-semibold">
+                      📦 {totalStock}kg &nbsp; | &nbsp; 💰 Rs. {latestPrice}/kg
+                    </div>
+                    <div className="text-sm text-gray-400 ml-4 flex items-center gap-1">
+                      <InformationCircleIcon className="w-4 h-4" /> View Details
                     </div>
                   </li>
                 );
@@ -320,16 +384,9 @@ const FarmerDashboard = () => {
         </div>
 
         {/* Category Detail Modal */}
-        {selectedCategory && (
-          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
-            <div className="bg-white rounded-lg shadow-lg p-6 relative max-w-2xl w-full">
-              <button
-                className="absolute top-2 right-2 text-gray-500 hover:text-red-600 text-2xl font-bold"
-                onClick={() => { setSelectedCategory(null); setCategoryProducts([]); setEditEntry(null); }}
-                aria-label="Close"
-              >
-                &times;
-              </button>
+        <Modal open={!!selectedCategory} onClose={() => { setSelectedCategory(null); setCategoryProducts([]); setEditEntry(null); }}>
+          {selectedCategory && (
+            <div>
               <h2 className="text-2xl font-bold mb-2">{selectedCategory} Category View</h2>
               <div className="mb-4 flex justify-between items-center">
                 {(() => {
@@ -341,56 +398,79 @@ const FarmerDashboard = () => {
                         <div className="text-lg font-semibold">💰 Current Price: Rs. {latestPrice}/kg</div>
                       </div>
                       <button
-                        className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 font-semibold"
+                        className="bg-red-600 text-white px-4 py-2 rounded-lg shadow hover:bg-red-700 focus:ring-2 focus:ring-red-400 font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed"
                         onClick={handleDeleteCategory}
                         disabled={loading}
                       >
-                        Delete Category
+                        {loading ? <span className="loader mr-2"></span> : null} Delete Category
                       </button>
                     </>
                   );
                 })()}
               </div>
               <div className="mb-2 text-md font-semibold">Date-wise product listings</div>
-              <ul className="divide-y divide-gray-200 max-h-64 overflow-y-auto">
-                {categoryProducts.length > 0 ? (
-                  categoryProducts.map((prod, idx) => (
-                    <li key={prod.id} className="py-2 flex flex-col md:flex-row md:items-center md:justify-between">
-                      {editEntry === prod.id ? (
-                        <form className="flex flex-col md:flex-row md:items-center w-full gap-2" onSubmit={handleEditSubmit}>
-                          <input type="text" className="border rounded px-2 py-1 w-24" value={editForm.productName} onChange={e => setEditForm(f => ({ ...f, productName: e.target.value }))} required />
-                          <input type="number" className="border rounded px-2 py-1 w-16" value={editForm.quantity} onChange={e => setEditForm(f => ({ ...f, quantity: e.target.value }))} required min="0" />
-                          <input type="number" className="border rounded px-2 py-1 w-20" value={editForm.price} onChange={e => setEditForm(f => ({ ...f, price: e.target.value }))} required min="0" step="0.01" />
-                          <input type="date" className="border rounded px-2 py-1 w-32" value={editForm.harvestDate} onChange={e => setEditForm(f => ({ ...f, harvestDate: e.target.value }))} required />
-                          <input type="text" className="border rounded px-2 py-1 w-32" value={editForm.location} onChange={e => setEditForm(f => ({ ...f, location: e.target.value }))} required />
-                          <select className="border rounded px-2 py-1 w-16" value={editForm.grade} onChange={e => setEditForm(f => ({ ...f, grade: e.target.value }))} required>
-                            <option value="A">A</option>
-                            <option value="B">B</option>
-                            <option value="C">C</option>
-                          </select>
-                          <input type="text" className="border rounded px-2 py-1 w-32" value={editForm.description} onChange={e => setEditForm(f => ({ ...f, description: e.target.value }))} placeholder="Description" />
-                          <button type="submit" className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700" disabled={loading}>Save</button>
-                          <button type="button" className="bg-gray-400 text-white px-3 py-1 rounded hover:bg-gray-500" onClick={() => setEditEntry(null)} disabled={loading}>Cancel</button>
-                        </form>
-                      ) : (
-                        <>
-                          <span className="mr-2">🗓️ {prod.harvestDate}</span>
-                          <span className="mr-2">- {prod.name} - {prod.quantity}kg @ Rs. {prod.price}/kg</span>
-                          <div className="flex gap-2 mt-2 md:mt-0">
-                            <button className="bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700 text-xs" onClick={() => handleEditEntry(prod)} disabled={loading}>Edit</button>
-                            <button className="bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700 text-xs" onClick={() => handleDeleteEntry(prod.id)} disabled={loading}>Delete</button>
-                          </div>
-                        </>
-                      )}
-                    </li>
-                  ))
-                ) : (
-                  <li className="py-2 text-gray-500">No entries for this category.</li>
-                )}
-              </ul>
+              <div className="overflow-x-auto">
+                <table className="min-w-full border rounded-lg">
+                  <thead>
+                    <tr className="bg-gray-100">
+                      <th className="px-3 py-2 text-left text-xs font-bold text-gray-700">Date</th>
+                      <th className="px-3 py-2 text-left text-xs font-bold text-gray-700">Product</th>
+                      <th className="px-3 py-2 text-left text-xs font-bold text-gray-700">Quantity (kg)</th>
+                      <th className="px-3 py-2 text-left text-xs font-bold text-gray-700">Price (Rs/kg)</th>
+                      <th className="px-3 py-2 text-left text-xs font-bold text-gray-700">Location</th>
+                      <th className="px-3 py-2 text-left text-xs font-bold text-gray-700">Grade</th>
+                      <th className="px-3 py-2 text-left text-xs font-bold text-gray-700">Description</th>
+                      <th className="px-3 py-2 text-center text-xs font-bold text-gray-700">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {categoryProducts.length > 0 ? (
+                      categoryProducts.map((prod, idx) => (
+                        <tr key={prod.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                          {editEntry === prod.id ? (
+                            <td colSpan={8} className="p-2">
+                              <form className="flex flex-wrap gap-2 items-center" onSubmit={handleEditSubmit}>
+                                <input type="text" className="border rounded px-2 py-1 w-24" value={editForm.productName} onChange={e => setEditForm(f => ({ ...f, productName: e.target.value }))} required />
+                                <input type="number" className="border rounded px-2 py-1 w-16" value={editForm.quantity} onChange={e => setEditForm(f => ({ ...f, quantity: e.target.value }))} required min="0" />
+                                <input type="number" className="border rounded px-2 py-1 w-20" value={editForm.price} onChange={e => setEditForm(f => ({ ...f, price: e.target.value }))} required min="0" step="0.01" />
+                                <input type="date" className="border rounded px-2 py-1 w-32" value={editForm.harvestDate} onChange={e => setEditForm(f => ({ ...f, harvestDate: e.target.value }))} required />
+                                <input type="text" className="border rounded px-2 py-1 w-32" value={editForm.location} onChange={e => setEditForm(f => ({ ...f, location: e.target.value }))} required />
+                                <select className="border rounded px-2 py-1 w-16" value={editForm.grade} onChange={e => setEditForm(f => ({ ...f, grade: e.target.value }))} required>
+                                  <option value="A">A</option>
+                                  <option value="B">B</option>
+                                  <option value="C">C</option>
+                                </select>
+                                <input type="text" className="border rounded px-2 py-1 w-32" value={editForm.description} onChange={e => setEditForm(f => ({ ...f, description: e.target.value }))} placeholder="Description" />
+                                <button type="submit" className="bg-green-600 text-white px-3 py-1 rounded-lg shadow hover:bg-green-700 focus:ring-2 focus:ring-green-400 transition disabled:opacity-60 disabled:cursor-not-allowed" disabled={loading}>{loading ? <span className="loader mr-2"></span> : null} Save</button>
+                                <button type="button" className="bg-gray-400 text-white px-3 py-1 rounded-lg shadow hover:bg-gray-500 focus:ring-2 focus:ring-gray-300 transition" onClick={() => setEditEntry(null)} disabled={loading}>Cancel</button>
+                              </form>
+                            </td>
+                          ) : (
+                            <>
+                              <td className="px-3 py-2 text-sm">{prod.harvestDate}</td>
+                              <td className="px-3 py-2 text-sm">{prod.name}</td>
+                              <td className="px-3 py-2 text-sm">{prod.quantity}</td>
+                              <td className="px-3 py-2 text-sm">{prod.price}</td>
+                              <td className="px-3 py-2 text-sm">{prod.location}</td>
+                              <td className="px-3 py-2 text-sm">{prod.grade}</td>
+                              <td className="px-3 py-2 text-sm">{prod.description}</td>
+                              <td className="px-3 py-2 text-center">
+                                <button className="bg-blue-600 text-white px-2 py-1 rounded-lg shadow hover:bg-blue-700 focus:ring-2 focus:ring-blue-400 text-xs transition mr-1 disabled:opacity-60 disabled:cursor-not-allowed" onClick={() => handleEditEntry(prod)} disabled={loading}>Edit</button>
+                                <button className="bg-red-600 text-white px-2 py-1 rounded-lg shadow hover:bg-red-700 focus:ring-2 focus:ring-red-400 text-xs transition disabled:opacity-60 disabled:cursor-not-allowed" onClick={() => handleDeleteEntry(prod.id)} disabled={loading}>Delete</button>
+                              </td>
+                            </>
+                          )}
+                        </tr>
+                      ))
+                    ) : (
+                      <tr><td colSpan={8} className="py-2 text-gray-500 text-center">No entries for this category.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </Modal>
 
         {/* Recent Orders */}
         <div className="bg-white shadow overflow-hidden sm:rounded-md">
@@ -432,24 +512,34 @@ const FarmerDashboard = () => {
         </div>
       </div>
               {showAddProductForm && (
-          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
-            <div className="bg-white rounded-lg shadow-lg p-6 relative max-w-2xl w-full">
-              <button
-                className="absolute top-2 right-2 text-gray-500 hover:text-red-600 text-2xl font-bold"
-                onClick={() => setShowAddProductForm(false)}
-                aria-label="Close"
-              >
-                &times;
-              </button>
-              <AddProductForm onSuccess={() => {
-                setShowAddProductForm(false);
-                fetchProducts(); // Refresh the products list
-              }} />
-            </div>
-          </div>
+          <Modal open={showAddProductForm} onClose={() => setShowAddProductForm(false)}>
+            <AddProductForm onSuccess={() => {
+              setShowAddProductForm(false);
+              fetchProducts(); // Refresh the products list
+            }} />
+          </Modal>
         )}
     </DashboardLayout>
   );
 };
 
 export default FarmerDashboard;
+
+// Loader spinner CSS
+// Add this at the end of the file or in your global CSS
+<style>{`
+.loader {
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid #3498db;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  animation: spin 0.8s linear infinite;
+  display: inline-block;
+  vertical-align: middle;
+}
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+`}</style>

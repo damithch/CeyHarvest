@@ -40,6 +40,34 @@ const AddProductForm = ({ onSuccess }) => {
     "Guava 🍐",
     "Jackfruit 🍈",
   ];
+
+  const districts = [
+    "Colombo",
+    "Gampaha",
+    "Kalutara",
+    "Kandy",
+    "Matale",
+    "Nuwara Eliya",
+    "Galle",
+    "Matara",
+    "Hambantota",
+    "Jaffna",
+    "Kilinochchi",
+    "Mannar",
+    "Vavuniya",
+    "Mullaitivu",
+    "Batticaloa",
+    "Ampara",
+    "Trincomalee",
+    "Kurunegala",
+    "Puttalam",
+    "Anuradhapura",
+    "Polonnaruwa",
+    "Badulla",
+    "Monaragala",
+    "Ratnapura",
+    "Kegalle"
+  ];
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -193,17 +221,22 @@ const AddProductForm = ({ onSuccess }) => {
               <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1">
                 Location *
               </label>
-              <input
-                id="location"
-                name="location"
-                type="text"
-                required
-                value={formData.location}
-                onChange={handleChange}
-                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
-                placeholder="e.g., Polonnaruwa, Anuradhapura"
-              />
-            </div>
+              <select
+                id="location"
+                name="location"
+                required
+                value={formData.location}
+                onChange={handleChange}
+                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 text-gray-900 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm bg-white"
+              >
+                <option value="">-- Select District --</option>
+                {districts.map((district) => (
+                  <option key={district} value={district}>
+                    {district}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div>
               <label htmlFor="quantity" className="block text-sm font-medium text-gray-700 mb-1">
                 Quantity (kg) *
