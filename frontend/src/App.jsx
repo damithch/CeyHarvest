@@ -14,7 +14,9 @@ import FarmerDashboard from './components/dashboard/FarmerDashboard';
 import BuyerDashboard from './components/dashboard/BuyerDashboard';
 import DriverDashboard from './components/dashboard/DriverDashboard';
 import ProfileSettings from './components/user/ProfileSettings';
+import Marketplace from './components/dashboard/Marketplace';
 import { ROUTES, getRoleDashboard } from './constants/routes';
+
 
 
 
@@ -58,6 +60,7 @@ function App() {
           <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPassword />} />
           <Route path={ROUTES.RESET_PASSWORD} element={<ResetPassword />} />
           <Route path={ROUTES.UNAUTHORIZED} element={<Unauthorized />} />
+          <Route path="/marketplace" element={<Marketplace />} />
           
           {/* Main dashboard route - keep existing functionality */}
           <Route 
@@ -144,7 +147,7 @@ function App() {
               </ProtectedRoute>
             } 
           />
-          
+      
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Router>

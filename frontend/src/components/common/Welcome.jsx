@@ -1,48 +1,49 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { ShoppingCartIcon, GlobeAltIcon, UserGroupIcon, SparklesIcon } from '@heroicons/react/24/outline';
 
-const Welcome = () => {
+export default function Welcome() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8 text-center">
-        <div>
-          <h1 className="text-4xl font-extrabold text-gray-900 mb-2">
-            Welcome to CeyHarvest
-          </h1>
-          <p className="text-lg text-gray-600 mb-8">
-            Your agricultural marketplace connecting farmers and buyers
-          </p>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-100 flex flex-col items-center justify-center px-4 py-8">
+      {/* Hero Section */}
+      <div className="max-w-3xl w-full text-center mb-12">
+        <h1 className="text-4xl md:text-5xl font-extrabold text-green-800 mb-4 flex items-center justify-center gap-2">
+          <span>🌾</span> Welcome to CeyHarvest
+        </h1>
+        <p className="text-lg md:text-xl text-gray-700 mb-6">
+          The modern, smart, and fair marketplace for Sri Lankan agriculture. Buy the freshest produce, get the best prices, and support local farmers — all powered by advanced technology.
+        </p>
+        <Link
+          to="/marketplace"
+          className="inline-block bg-green-600 text-white px-8 py-3 rounded-lg shadow-lg font-bold text-lg hover:bg-green-700 transition focus:ring-2 focus:ring-green-400"
+        >
+          Go to Marketplace
+        </Link>
+      </div>
 
-        <div className="space-y-4">
-          <Link
-            to="/login"
-            className="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-200"
-          >
-            Sign In
-          </Link>
-          
-          <Link
-            to="/register"
-            className="w-full flex justify-center py-3 px-4 border border-green-600 text-sm font-medium rounded-md text-green-600 bg-white hover:bg-green-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-200"
-          >
-            Create New Account
-          </Link>
+      {/* Features Section */}
+      <div className="max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="bg-white rounded-2xl shadow p-6 flex flex-col items-center text-center hover:shadow-lg transition">
+          <SparklesIcon className="w-10 h-10 text-yellow-500 mb-2" />
+          <h2 className="text-xl font-bold text-green-800 mb-1">Smart Order Matching</h2>
+          <p className="text-gray-600">Our system uses Linear Programming to match buyers with the best mix of farmers, ensuring you get the freshest products at the best price.</p>
         </div>
-
-        <div className="mt-8 pt-6 border-t border-gray-200">
-          <div className="text-xs text-gray-500">
-            <p className="font-medium mb-2">Account Types:</p>
-            <div className="space-y-1">
-              <p>🌾 <strong>Farmers:</strong> Sell your products directly</p>
-              <p>🛒 <strong>Buyers:</strong> Source fresh agricultural products</p>
-              <p>🚚 <strong>Drivers:</strong> Provide delivery and transportation services</p>
-            </div>
-          </div>
+        <div className="bg-white rounded-2xl shadow p-6 flex flex-col items-center text-center hover:shadow-lg transition">
+          <UserGroupIcon className="w-10 h-10 text-blue-500 mb-2" />
+          <h2 className="text-xl font-bold text-green-800 mb-1">Verified Farmers</h2>
+          <p className="text-gray-600">All our farmers are verified and rated, so you can buy with confidence and support local communities.</p>
+        </div>
+        <div className="bg-white rounded-2xl shadow p-6 flex flex-col items-center text-center hover:shadow-lg transition">
+          <GlobeAltIcon className="w-10 h-10 text-green-500 mb-2" />
+          <h2 className="text-xl font-bold text-green-800 mb-1">Geo-Aware Pricing</h2>
+          <p className="text-gray-600">Delivery costs and freshness are factored in using real road distances and harvest dates, so you always get a fair deal.</p>
+        </div>
+        <div className="bg-white rounded-2xl shadow p-6 flex flex-col items-center text-center hover:shadow-lg transition">
+          <ShoppingCartIcon className="w-10 h-10 text-pink-500 mb-2" />
+          <h2 className="text-xl font-bold text-green-800 mb-1">Freshness Guarantee</h2>
+          <p className="text-gray-600">We prioritize the freshest produce, so your order is always as close to harvest as possible.</p>
         </div>
       </div>
     </div>
   );
-};
-
-export default Welcome;
+}
