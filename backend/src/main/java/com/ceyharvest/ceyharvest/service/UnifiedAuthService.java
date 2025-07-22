@@ -27,6 +27,9 @@ public class UnifiedAuthService {
     private DriverRepository driverRepository;
     
     @Autowired
+    private WarehouseManagerRepository warehouseManagerRepository;
+    
+    @Autowired
     private PasswordEncoder passwordEncoder;
     
     @Autowired
@@ -45,6 +48,15 @@ public class UnifiedAuthService {
                     return createUnverifiedEmailResponse(admin.getEmail());
                 }
                 return createLoginResponse(admin.getEmail(), admin.getRole(), admin.getId(), admin, "ADMIN");
+            }
+        }
+
+        // Try WarehouseManager
+        Optional<WarehouseManager> wmOpt = warehouseManagerRepository.findAll().stream().filter(m -> email.equals(m.getPhoneNumber()) || email.equalsIgnoreCase(m.getName())).findFirst();
+        if (wmOpt.isPresent()) {
+            WarehouseManager wm = wmOpt.get();
+            if (passwordEncoder.matches(password, wm.getPassword())) {
+                return createLoginResponse(wm.getPhoneNumber(), "WAREHOUSE_MANAGER", wm.getId(), wm, "WAREHOUSE_MANAGER");
             }
         }
 
@@ -98,6 +110,12 @@ public class UnifiedAuthService {
             // Use existing email-based login
             return attemptLogin(identifier, password);
         } else {
+            // Try WarehouseManager by phone
+            Optional<WarehouseManager> wmOpt = warehouseManagerRepository.findAll().stream().filter(m -> identifier.equals(m.getPhoneNumber())).findFirst();
+            if (wmOpt.isPresent() && passwordEncoder.matches(password, wmOpt.get().getPassword())) {
+                WarehouseManager wm = wmOpt.get();
+                return createLoginResponse(wm.getPhoneNumber(), "WAREHOUSE_MANAGER", wm.getId(), wm, "WAREHOUSE_MANAGER");
+            }
             // Search by phone number across all user types
             // Try Farmer by phone
             Optional<Farmer> farmerOpt = farmerRepository.findFirstByPhoneNumber(identifier);
@@ -131,6 +149,9 @@ public class UnifiedAuthService {
         if (adminRepository.findByEmail(email).isPresent()) {
             return "ADMIN";
         }
+        if (warehouseManagerRepository.findAll().stream().anyMatch(m -> email.equals(m.getPhoneNumber()) || email.equalsIgnoreCase(m.getName()))) {
+            return "WAREHOUSE_MANAGER";
+        }
         if (farmerRepository.findByEmail(email).isPresent()) {
             return "FARMER";
         }
@@ -157,6 +178,8 @@ public class UnifiedAuthService {
         switch (role.toUpperCase()) {
             case "ADMIN":
                 return adminRepository.findByEmail(email).orElse(null);
+            case "WAREHOUSE_MANAGER":
+                return warehouseManagerRepository.findAll().stream().filter(m -> email.equals(m.getPhoneNumber()) || email.equalsIgnoreCase(m.getName())).findFirst().orElse(null);
             case "FARMER":
                 return farmerRepository.findByEmail(email).orElse(null);
             case "BUYER":

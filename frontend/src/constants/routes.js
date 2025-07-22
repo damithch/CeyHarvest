@@ -45,6 +45,12 @@ export const ROUTES = {
   },
 };
 
+export const WAREHOUSE_DASHBOARD = '/warehouse-dashboard';
+export const ADMIN_DASHBOARD = '/admin-dashboard';
+export const FARMER_DASHBOARD = '/farmer-dashboard';
+export const BUYER_DASHBOARD = '/buyer-dashboard';
+export const DRIVER_DASHBOARD = '/driver-dashboard';
+
 // Helper function to get role-specific dashboard route
 export const getRoleDashboard = (role) => {
   switch (role) {

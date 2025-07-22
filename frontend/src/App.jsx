@@ -14,7 +14,8 @@ import FarmerDashboard from './components/dashboard/FarmerDashboard';
 import BuyerDashboard from './components/dashboard/BuyerDashboard';
 import DriverDashboard from './components/dashboard/DriverDashboard';
 import ProfileSettings from './components/user/ProfileSettings';
-import { ROUTES, getRoleDashboard } from './constants/routes';
+import WarehouseDashboard from './components/dashboard/WarehouseDashboard';
+import { ROUTES, getRoleDashboard, WAREHOUSE_DASHBOARD, ADMIN_DASHBOARD, FARMER_DASHBOARD, BUYER_DASHBOARD, DRIVER_DASHBOARD } from './constants/routes';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -142,6 +143,11 @@ function App() {
               </ProtectedRoute>
             } 
           />
+          <Route path={WAREHOUSE_DASHBOARD} element={<ProtectedRoute><WarehouseDashboard /></ProtectedRoute>} />
+          <Route path={ADMIN_DASHBOARD} element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+          <Route path={FARMER_DASHBOARD} element={<ProtectedRoute><FarmerDashboard /></ProtectedRoute>} />
+          <Route path={BUYER_DASHBOARD} element={<ProtectedRoute><BuyerDashboard /></ProtectedRoute>} />
+          <Route path={DRIVER_DASHBOARD} element={<ProtectedRoute><DriverDashboard /></ProtectedRoute>} />
           
           <Route path="*" element={<NotFound />} />
         </Routes>

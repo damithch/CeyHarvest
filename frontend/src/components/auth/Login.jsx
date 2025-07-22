@@ -71,7 +71,19 @@ const Login = () => {
         console.log('Login successful:', responseData);
         const userRole = responseData.role;
         login(responseData, userRole);
-        navigate('/dashboard');
+        if (userRole === 'WAREHOUSE_MANAGER') {
+          navigate('/warehouse-dashboard');
+        } else if (userRole === 'ADMIN') {
+          navigate('/admin-dashboard');
+        } else if (userRole === 'FARMER') {
+          navigate('/farmer-dashboard');
+        } else if (userRole === 'BUYER') {
+          navigate('/buyer-dashboard');
+        } else if (userRole === 'DRIVER') {
+          navigate('/driver-dashboard');
+        } else {
+          navigate('/dashboard');
+        }
       } else {
         const errorData = await response.text();
         console.error('Login error:', errorData);
