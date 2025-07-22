@@ -11,6 +11,7 @@ public class WarehouseManager {
     private String phoneNumber;
     private String password;
     private String warehouseId;
+    private String email;
 
     // Getters and setters
     public String getId() { return id; }
@@ -23,4 +24,16 @@ public class WarehouseManager {
     public void setPassword(String password) { this.password = password; }
     public String getWarehouseId() { return warehouseId; }
     public void setWarehouseId(String warehouseId) { this.warehouseId = warehouseId; }
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+
+    public WarehouseManager() {}
+    public WarehouseManager(String id, String name, String phoneNumber, String email, String password, String warehouseId) {
+        this.id = id;
+        this.name = name;
+        this.phoneNumber = phoneNumber;
+        this.email = email;
+        this.password = password;
+        this.warehouseId = warehouseId;
+    }
 } 

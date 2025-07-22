@@ -1,39 +1,68 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import DashboardLayout from '../layout/DashboardLayout';
 
+
+const user = JSON.parse(localStorage.getItem('user'));
+const warehouseId = user?.warehouseId;
+console.log('Loaded user:', user, 'Warehouse ID:', warehouseId);
+
 const WarehouseDashboard = () => {
-  // Placeholder state and handlers
-  // TODO: Fetch warehouse info, farmers, products, etc.
+  const [warehouse, setWarehouse] = useState(null);
+  const [farmers, setFarmers] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  // Get warehouseId from user info (from localStorage after login)
+  const user = JSON.parse(localStorage.getItem('user'));
+  const warehouseId = user?.warehouseId;
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!warehouseId) return;
+    setLoading(true);
+    Promise.all([
+      fetch(`/api/admin/warehouses/${warehouseId}`, { headers: { Authorization: `Bearer ${token}` } }),
+      fetch(`/api/warehouse/${warehouseId}/farmers`, { headers: { Authorization: `Bearer ${token}` } }),
+      fetch(`/api/warehouse/${warehouseId}/products`, { headers: { Authorization: `Bearer ${token}` } }),
+    ])
+      .then(async ([wRes, fRes, pRes]) => {
+        if (!wRes.ok || !fRes.ok || !pRes.ok) throw new Error('Failed to fetch data');
+        setWarehouse(await wRes.json());
+        setFarmers(await fRes.json());
+        setProducts(await pRes.json());
+      })
+      .catch(err => setError(err.message))
+      .finally(() => setLoading(false));
+  }, [warehouseId]);
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div style={{ color: 'red' }}>{error}</div>;
 
   return (
     <DashboardLayout>
       <h1>Warehouse Dashboard</h1>
       <section>
         <h2>Warehouse Info</h2>
-        {/* Display district, manager name, etc. */}
-        <div>District: [district]</div>
-        <div>Manager: [manager name]</div>
-        <div>Address: [address]</div>
-        <div>Phone: [phone]</div>
+        <div>District: {warehouse?.district}</div>
+        <div>Manager: {warehouse?.managerName}</div>
+        <div>Address: {warehouse?.address}</div>
+        <div>Phone: {warehouse?.phoneNumber}</div>
       </section>
       <section>
         <h2>Farmers</h2>
-        {/* Search, sort, register farmer, list farmers */}
-        <button>Register Farmer</button>
-        <input placeholder="Search farmers..." />
-        <button>Sort by Name</button>
         <ul>
-          <li>Farmer 1</li>
-          <li>Farmer 2</li>
+          {farmers.map(f => <li key={f.id}>{f.firstName} {f.lastName} ({f.phoneNumber})</li>)}
         </ul>
       </section>
       <section>
         <h2>Products</h2>
-        {/* List products, add/update product, show stock/price */}
-        <button>Add Product</button>
         <ul>
-          <li>Product 1 - Stock: 100, Price: $10</li>
-          <li>Product 2 - Stock: 50, Price: $20</li>
+          {products.map(p => (
+            <li key={p.productId}>
+              {p.productName} - Stock: {p.totalStock}, Price: {p.latestPrice}
+            </li>
+          ))}
         </ul>
       </section>
     </DashboardLayout>

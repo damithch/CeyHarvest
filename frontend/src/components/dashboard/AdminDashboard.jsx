@@ -2,6 +2,93 @@ import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../layout/DashboardLayout';
 import UserManagement from '../user/UserManagement';
 
+function WarehouseRegistrationForm({ onClose }) {
+  const [form, setForm] = useState({
+    managerName: '',
+    district: '',
+    address: '',
+    phoneNumber: '',
+    email: '',
+    password: ''
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
+
+  const handleSubmit = async e => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    setSuccess('');
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/admin/warehouses/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(form)
+      });
+      if (!res.ok) throw new Error('Failed to register warehouse');
+      setSuccess('Warehouse registered successfully!');
+      setForm({ managerName: '', district: '', address: '', phoneNumber: '', password: '' });
+      // Optionally refresh warehouse list here
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-3">
+      <input name="managerName" value={form.managerName} onChange={handleChange} placeholder="Manager Name" required className="border p-2 w-full" />
+      <select name="district" value={form.district} onChange={handleChange} required className="border p-2 w-full">
+        <option value="">Select District</option>
+        <option value="Colombo">Colombo</option>
+        <option value="Gampaha">Gampaha</option>
+        <option value="Kalutara">Kalutara</option>
+        <option value="Kandy">Kandy</option>
+        <option value="Matale">Matale</option>
+        <option value="Nuwara Eliya">Nuwara Eliya</option>
+        <option value="Galle">Galle</option>
+        <option value="Matara">Matara</option>
+        <option value="Hambantota">Hambantota</option>
+        <option value="Jaffna">Jaffna</option>
+        <option value="Kilinochchi">Kilinochchi</option>
+        <option value="Mannar">Mannar</option>
+        <option value="Vavuniya">Vavuniya</option>
+        <option value="Mullaitivu">Mullaitivu</option>
+        <option value="Batticaloa">Batticaloa</option>
+        <option value="Ampara">Ampara</option>
+        <option value="Trincomalee">Trincomalee</option>
+        <option value="Kurunegala">Kurunegala</option>
+        <option value="Puttalam">Puttalam</option>
+        <option value="Anuradhapura">Anuradhapura</option>
+        <option value="Polonnaruwa">Polonnaruwa</option>
+        <option value="Badulla">Badulla</option>
+        <option value="Monaragala">Monaragala</option>
+        <option value="Ratnapura">Ratnapura</option>
+        <option value="Kegalle">Kegalle</option>
+      </select>
+      <input name="address" value={form.address} onChange={handleChange} placeholder="Address" required className="border p-2 w-full" />
+      <input name="phoneNumber" value={form.phoneNumber} onChange={handleChange} placeholder="Phone Number" required className="border p-2 w-full" />
+      <input name="email" value={form.email} onChange={handleChange} placeholder="Email" type="email" required className="border p-2 w-full" />
+      <input name="password" type="password" value={form.password} onChange={handleChange} placeholder="Password" required className="border p-2 w-full" />
+      <div className="flex gap-2">
+        <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded" disabled={loading}>
+          {loading ? 'Registering...' : 'Register'}
+        </button>
+        <button type="button" className="bg-gray-400 text-white px-4 py-2 rounded" onClick={onClose}>
+          Cancel
+        </button>
+      </div>
+      {error && <div className="text-red-600">{error}</div>}
+      {success && <div className="text-green-600">{success}</div>}
+    </form>
+  );
+}
+
 const AdminDashboard = () => {
   const [currentView, setCurrentView] = useState('dashboard');
   const [stats, setStats] = useState({
@@ -13,6 +100,7 @@ const AdminDashboard = () => {
     totalOrders: 0
   });
   const [recentActivity, setRecentActivity] = useState([]);
+  const [showWarehouseForm, setShowWarehouseForm] = useState(false);
 
   useEffect(() => {
     // Fetch admin statistics
@@ -98,6 +186,20 @@ const AdminDashboard = () => {
   return (
     <DashboardLayout title="Admin Dashboard">
       <div className="space-y-6">
+        {/* Register Warehouse Button */}
+        <button
+          className="bg-green-700 text-white px-4 py-2 rounded mb-4"
+          onClick={() => setShowWarehouseForm(true)}
+        >
+          Register Warehouse
+        </button>
+        {/* Register Warehouse Form */}
+        {showWarehouseForm && (
+          <div className="bg-white p-6 rounded-lg shadow mb-6">
+            <h3 className="text-lg font-medium mb-4">Register New Warehouse</h3>
+            <WarehouseRegistrationForm onClose={() => setShowWarehouseForm(false)} />
+          </div>
+        )}
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
           <StatCard

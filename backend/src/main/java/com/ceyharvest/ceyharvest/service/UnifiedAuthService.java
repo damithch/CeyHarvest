@@ -30,6 +30,9 @@ public class UnifiedAuthService {
     private WarehouseManagerRepository warehouseManagerRepository;
     
     @Autowired
+    private WarehouseRepository warehouseRepository;
+    
+    @Autowired
     private PasswordEncoder passwordEncoder;
     
     @Autowired
@@ -51,12 +54,21 @@ public class UnifiedAuthService {
             }
         }
 
+        // Try Warehouse by email
+        Optional<Warehouse> warehouseOpt = warehouseRepository.findAll().stream()
+            .filter(w -> email.equalsIgnoreCase(w.getEmail()))
+            .findFirst();
+        if (warehouseOpt.isPresent() && passwordEncoder.matches(password, warehouseOpt.get().getPassword())) {
+            Warehouse warehouse = warehouseOpt.get();
+            return createLoginResponse(warehouse.getEmail(), "WAREHOUSE", warehouse.getId(), warehouse, "WAREHOUSE");
+        }
+
         // Try WarehouseManager
-        Optional<WarehouseManager> wmOpt = warehouseManagerRepository.findAll().stream().filter(m -> email.equals(m.getPhoneNumber()) || email.equalsIgnoreCase(m.getName())).findFirst();
+        Optional<WarehouseManager> wmOpt = warehouseManagerRepository.findAll().stream().filter(m -> email.equals(m.getPhoneNumber()) || email.equalsIgnoreCase(m.getEmail())).findFirst();
         if (wmOpt.isPresent()) {
             WarehouseManager wm = wmOpt.get();
             if (passwordEncoder.matches(password, wm.getPassword())) {
-                return createLoginResponse(wm.getPhoneNumber(), "WAREHOUSE_MANAGER", wm.getId(), wm, "WAREHOUSE_MANAGER");
+                return createLoginResponse(wm.getEmail(), "WAREHOUSE_MANAGER", wm.getId(), wm, "WAREHOUSE_MANAGER");
             }
         }
 
@@ -110,11 +122,13 @@ public class UnifiedAuthService {
             // Use existing email-based login
             return attemptLogin(identifier, password);
         } else {
-            // Try WarehouseManager by phone
-            Optional<WarehouseManager> wmOpt = warehouseManagerRepository.findAll().stream().filter(m -> identifier.equals(m.getPhoneNumber())).findFirst();
-            if (wmOpt.isPresent() && passwordEncoder.matches(password, wmOpt.get().getPassword())) {
-                WarehouseManager wm = wmOpt.get();
-                return createLoginResponse(wm.getPhoneNumber(), "WAREHOUSE_MANAGER", wm.getId(), wm, "WAREHOUSE_MANAGER");
+            // Try Warehouse by phone or email
+            Optional<Warehouse> warehouseOpt = warehouseRepository.findAll().stream()
+                .filter(w -> identifier.equals(w.getPhoneNumber()) || identifier.equalsIgnoreCase(w.getEmail()))
+                .findFirst();
+            if (warehouseOpt.isPresent() && passwordEncoder.matches(password, warehouseOpt.get().getPassword())) {
+                Warehouse warehouse = warehouseOpt.get();
+                return createLoginResponse(warehouse.getEmail(), "WAREHOUSE", warehouse.getId(), warehouse, "WAREHOUSE");
             }
             // Search by phone number across all user types
             // Try Farmer by phone
@@ -149,7 +163,7 @@ public class UnifiedAuthService {
         if (adminRepository.findByEmail(email).isPresent()) {
             return "ADMIN";
         }
-        if (warehouseManagerRepository.findAll().stream().anyMatch(m -> email.equals(m.getPhoneNumber()) || email.equalsIgnoreCase(m.getName()))) {
+        if (warehouseManagerRepository.findAll().stream().anyMatch(m -> email.equals(m.getPhoneNumber()) || email.equalsIgnoreCase(m.getEmail()))) {
             return "WAREHOUSE_MANAGER";
         }
         if (farmerRepository.findByEmail(email).isPresent()) {
@@ -179,7 +193,7 @@ public class UnifiedAuthService {
             case "ADMIN":
                 return adminRepository.findByEmail(email).orElse(null);
             case "WAREHOUSE_MANAGER":
-                return warehouseManagerRepository.findAll().stream().filter(m -> email.equals(m.getPhoneNumber()) || email.equalsIgnoreCase(m.getName())).findFirst().orElse(null);
+                return warehouseManagerRepository.findAll().stream().filter(m -> email.equals(m.getPhoneNumber()) || email.equalsIgnoreCase(m.getEmail())).findFirst().orElse(null);
             case "FARMER":
                 return farmerRepository.findByEmail(email).orElse(null);
             case "BUYER":
