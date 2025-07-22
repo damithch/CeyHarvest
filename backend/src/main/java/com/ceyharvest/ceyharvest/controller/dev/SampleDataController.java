@@ -50,11 +50,18 @@ public class SampleDataController {
                 }
             }
 
-            // Create sample products
+            // Create sample products (only if no products exist to avoid duplicates)
             List<Product> sampleProducts = createSampleProducts();
             for (Product product : sampleProducts) {
-                Product savedProduct = productRepository.save(product);
-                createdProducts.add(savedProduct.getName());
+                // Check if product with same name and farmer already exists
+                List<Product> existingProducts = productRepository.findByFarmerId(product.getFarmerId());
+                boolean productExists = existingProducts.stream()
+                    .anyMatch(p -> p.getName().equals(product.getName()));
+                
+                if (!productExists) {
+                    Product savedProduct = productRepository.save(product);
+                    createdProducts.add(savedProduct.getName());
+                }
             }
 
             response.put("message", "Sample data created successfully");
