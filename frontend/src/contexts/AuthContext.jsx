@@ -43,13 +43,12 @@ export const AuthProvider = ({ children }) => {
   const login = (response, role) => {
     const { token: jwtToken, user: userData } = response;
     const userWithRole = { ...userData, role };
-    
     setUser(userWithRole);
     setToken(jwtToken);
-    
     // Store JWT token and user data
     localStorage.setItem('token', jwtToken);
-    localStorage.setItem(role.toLowerCase(), JSON.stringify(userData));
+    // Store the full response (role, user, token, etc.) for dashboard access
+    localStorage.setItem('user', JSON.stringify(response));
   };
 
   const logout = () => {
