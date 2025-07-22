@@ -10,6 +10,8 @@ import org.springframework.stereotype.Service;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import com.ceyharvest.ceyharvest.repository.WarehouseRepository;
+import com.ceyharvest.ceyharvest.document.Warehouse;
 
 @Service
 public class UnifiedAuthService {
@@ -25,6 +27,8 @@ public class UnifiedAuthService {
     
     @Autowired
     private DriverRepository driverRepository;
+    @Autowired
+    private WarehouseRepository warehouseRepository;
     
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -118,6 +122,13 @@ public class UnifiedAuthService {
             if (driverOpt.isPresent() && passwordEncoder.matches(password, driverOpt.get().getPassword())) {
                 Driver driver = driverOpt.get();
                 return createLoginResponse(driver.getEmail(), driver.getRole(), driver.getId(), driver, "DRIVER");
+            }
+
+            // Try Warehouse by phone
+            Optional<Warehouse> warehouseOpt = warehouseRepository.findByPhoneNumber(identifier);
+            if (warehouseOpt.isPresent() && passwordEncoder.matches(password, warehouseOpt.get().getPassword())) {
+                Warehouse warehouse = warehouseOpt.get();
+                return createLoginResponse(null, "WAREHOUSE", warehouse.getId(), warehouse, "WAREHOUSE");
             }
 
             return null; // No match found for phone number

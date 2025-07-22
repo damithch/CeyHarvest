@@ -40,7 +40,7 @@ const AdminDashboard = () => {
     const { name, value } = e.target;
     setWarehouseForm((prev) => ({ ...prev, [name]: value }));
   };
-  const handleWarehouseSubmit = (e) => {
+  const handleWarehouseSubmit = async (e) => {
     e.preventDefault();
     // Simple validation
     if (!warehouseForm.managerName || !warehouseForm.district || !warehouseForm.address || !warehouseForm.phoneNumber || !warehouseForm.password) {
@@ -48,11 +48,27 @@ const AdminDashboard = () => {
       return;
     }
     setFormError('');
-    // TODO: Replace with API call
-    console.log('Register Warehouse:', warehouseForm);
-    alert('Warehouse registration submitted! (API integration pending)');
-    setShowWarehouseForm(false);
-    setWarehouseForm({ managerName: '', district: '', address: '', phoneNumber: '', password: '' });
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/admin/warehouses/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(warehouseForm),
+      });
+      if (response.ok) {
+        alert('Warehouse registered successfully!');
+        setShowWarehouseForm(false);
+        setWarehouseForm({ managerName: '', district: '', address: '', phoneNumber: '', password: '' });
+      } else {
+        const errorMsg = await response.text();
+        setFormError(errorMsg);
+      }
+    } catch (err) {
+      setFormError('Network error. Please try again.');
+    }
   };
 
   const fetchStats = async () => {
