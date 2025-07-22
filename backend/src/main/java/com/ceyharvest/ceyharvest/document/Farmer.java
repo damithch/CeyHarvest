@@ -8,6 +8,7 @@ import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Document(collection = "farmers")
 @Data
@@ -35,4 +36,5 @@ public class Farmer {
     private boolean emailVerified = false; // Set to true after email verification
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private List<String> warehouseIds; // Associated warehouse IDs
 }
