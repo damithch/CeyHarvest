@@ -72,7 +72,8 @@ public class SecurityConfig {
                 
                 // Health check and actuator endpoints
                 .requestMatchers("/actuator/health").permitAll()
-                
+                // Marketplace public endpoints
+                .requestMatchers("/api/marketplace/**").permitAll()
                 // All other requests need authentication
                 .anyRequest().authenticated()
             );

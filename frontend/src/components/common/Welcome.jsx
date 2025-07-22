@@ -4,7 +4,12 @@ import { ShoppingCartIcon, GlobeAltIcon, UserGroupIcon, SparklesIcon } from '@he
 
 export default function Welcome() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-100 flex flex-col items-center justify-center px-4 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-100 flex flex-col items-center justify-center px-4 py-8 relative">
+      {/* Top-right Login/Register Buttons */}
+      <div className="absolute top-6 right-6 flex gap-2 z-10">
+        <Link to="/login" className="bg-white border border-green-600 text-green-700 px-4 py-2 rounded-lg font-semibold hover:bg-green-50 transition">Login</Link>
+        <Link to="/register" className="bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700 transition">Register</Link>
+      </div>
       {/* Hero Section */}
       <div className="max-w-3xl w-full text-center mb-12">
         <h1 className="text-4xl md:text-5xl font-extrabold text-green-800 mb-4 flex items-center justify-center gap-2">
