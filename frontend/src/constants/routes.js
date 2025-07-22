@@ -43,6 +43,12 @@ export const ROUTES = {
     PROFILE: '/driver/profile',
     DELIVERIES: '/driver/deliveries',
   },
+
+  // Warehouse routes
+  WAREHOUSE: {
+    DASHBOARD: '/warehouse/dashboard',
+    PROFILE: '/warehouse/profile',
+  },
 };
 
 // Helper function to get role-specific dashboard route
@@ -56,6 +62,8 @@ export const getRoleDashboard = (role) => {
       return ROUTES.FARMER.DASHBOARD;
     case 'DRIVER':
       return ROUTES.DRIVER.DASHBOARD;
+    case 'WAREHOUSE':
+      return ROUTES.WAREHOUSE.DASHBOARD;
     default:
       return ROUTES.LOGIN;
   }
@@ -72,6 +80,8 @@ export const getRoleProfile = (role) => {
       return ROUTES.FARMER.PROFILE;
     case 'DRIVER':
       return ROUTES.DRIVER.PROFILE;
+    case 'WAREHOUSE':
+      return ROUTES.WAREHOUSE.PROFILE;
     default:
       return ROUTES.PROFILE;
   }

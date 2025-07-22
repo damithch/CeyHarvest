@@ -71,7 +71,26 @@ const Login = () => {
         console.log('Login successful:', responseData);
         const userRole = responseData.role;
         login(responseData, userRole);
-        navigate('/dashboard');
+        // Route to correct dashboard for all roles, including WAREHOUSE
+        switch (userRole) {
+          case 'ADMIN':
+            navigate('/admin/dashboard');
+            break;
+          case 'BUYER':
+            navigate('/buyer/dashboard');
+            break;
+          case 'FARMER':
+            navigate('/farmer/dashboard');
+            break;
+          case 'DRIVER':
+            navigate('/driver/dashboard');
+            break;
+          case 'WAREHOUSE':
+            navigate('/warehouse/dashboard');
+            break;
+          default:
+            navigate('/dashboard');
+        }
       } else {
         const errorData = await response.text();
         console.error('Login error:', errorData);
