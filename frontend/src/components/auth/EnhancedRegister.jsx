@@ -1,7 +1,7 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 
-const EnhancedRegister = () => {
+const EnhancedRegister = ({ warehouseId }) => {
   const [step, setStep] = useState(1); // 1: Registration Form, 2: Verification
   const [formData, setFormData] = useState({
     username: '',
@@ -14,7 +14,7 @@ const EnhancedRegister = () => {
     postalCode: '',
     password: '',
     confirmPassword: '',
-    role: ''
+    role: warehouseId ? 'FARMER' : ''
   });
   const [verificationCode, setVerificationCode] = useState('');
   const [registrationEmail, setRegistrationEmail] = useState('');
@@ -25,6 +25,13 @@ const EnhancedRegister = () => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
   const navigate = useNavigate();
+
+  // If warehouseId is present, always set role to FARMER
+  useEffect(() => {
+    if (warehouseId && formData.role !== 'FARMER') {
+      setFormData((prev) => ({ ...prev, role: 'FARMER' }));
+    }
+  }, [warehouseId]);
 
   // Debounce function for email checking
   const debounce = useCallback((func, delay) => {
@@ -41,11 +48,14 @@ const EnhancedRegister = () => {
   );
 
   // Available roles for registration
-  const availableRoles = [
+  const allRoles = [
     { value: 'FARMER', label: 'Farmer', description: 'I want to sell agricultural products' },
     { value: 'BUYER', label: 'Buyer/Customer', description: 'I want to purchase agricultural products' },
     { value: 'DRIVER', label: 'Driver', description: 'I want to provide delivery services' }
   ];
+  const availableRoles = warehouseId
+    ? allRoles.filter(role => role.value === 'FARMER')
+    : allRoles.filter(role => role.value !== 'FARMER');
 
   const handleChange = (e) => {
     setFormData({
@@ -123,6 +133,10 @@ const EnhancedRegister = () => {
         postalCode: formData.postalCode,
         password: formData.password
       };
+      // If registering a farmer from a warehouse, include warehouseId
+      if (formData.role === 'FARMER' && warehouseId) {
+        registrationData.warehouseId = warehouseId;
+      }
 
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -540,36 +554,46 @@ const EnhancedRegister = () => {
           </div>
 
           {/* Role Selection */}
-          <div>
-            <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
-              I am a... *
-            </label>
-            <select
-              id="role"
-              name="role"
-              required
-              value={formData.role}
-              onChange={handleChange}
-              className="appearance-none relative block w-full px-3 py-2 border border-gray-300 text-gray-900 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm bg-white"
-            >
-              <option value="">Select your role</option>
-              {availableRoles.map(role => (
-                <option key={role.value} value={role.value}>
-                  {role.label}
-                </option>
-              ))}
-            </select>
-            
-            {/* Role Description */}
-            {formData.role && (
-              <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-md">
+          {!warehouseId ? (
+            <div>
+              <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
+                I am a... *
+              </label>
+              <select
+                id="role"
+                name="role"
+                required
+                value={formData.role}
+                onChange={handleChange}
+                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 text-gray-900 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm bg-white"
+              >
+                <option value="">Select your role</option>
+                {availableRoles.map(role => (
+                  <option key={role.value} value={role.value}>
+                    {role.label}
+                  </option>
+                ))}
+              </select>
+              {/* Role Description */}
+              {formData.role && (
+                <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-md">
+                  <p className="text-sm text-green-700">
+                    <strong>{availableRoles.find(r => r.value === formData.role)?.label}:</strong>{' '}
+                    {availableRoles.find(r => r.value === formData.role)?.description}
+                  </p>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div>
+              <input type="hidden" name="role" value="FARMER" />
+              <div className="p-3 bg-green-50 border border-green-200 rounded-md mb-2">
                 <p className="text-sm text-green-700">
-                  <strong>{availableRoles.find(r => r.value === formData.role)?.label}:</strong>{' '}
-                  {availableRoles.find(r => r.value === formData.role)?.description}
+                  You are registering a <strong>Farmer</strong> for this warehouse.
                 </p>
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Password Fields */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
