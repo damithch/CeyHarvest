@@ -1,10 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import DashboardLayout from '../layout/DashboardLayout';
+import EnhancedRegister from '../auth/EnhancedRegister';
 
 const WarehouseDashboard = () => {
   // Get warehouse info from localStorage (set after login)
   const userData = JSON.parse(localStorage.getItem('user'));
   const warehouse = userData && userData.role === 'WAREHOUSE' ? userData.user : null;
+  const warehouseId = warehouse ? warehouse.id : null;
+  const [showFarmerRegister, setShowFarmerRegister] = useState(false);
 
   return (
     <DashboardLayout title="Warehouse Dashboard">
@@ -16,6 +19,17 @@ const WarehouseDashboard = () => {
             <div><strong>District:</strong> {warehouse.district}</div>
             <div><strong>Address:</strong> {warehouse.address}</div>
             <div><strong>Phone Number:</strong> {warehouse.phoneNumber}</div>
+          </div>
+        )}
+        <button
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          onClick={() => setShowFarmerRegister((prev) => !prev)}
+        >
+          {showFarmerRegister ? 'Close Farmer Registration' : 'Register Farmer'}
+        </button>
+        {showFarmerRegister && (
+          <div className="mt-6">
+            <EnhancedRegister warehouseId={warehouseId} />
           </div>
         )}
         <p className="text-gray-700">This is your warehouse dashboard. Features for managing inventory, orders, and reports will appear here.</p>
