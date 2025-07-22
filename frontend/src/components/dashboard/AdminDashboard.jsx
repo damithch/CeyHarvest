@@ -2,6 +2,13 @@ import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../layout/DashboardLayout';
 import UserManagement from '../user/UserManagement';
 
+const DISTRICTS = [
+  'Ampara', 'Anuradhapura', 'Badulla', 'Batticaloa', 'Colombo', 'Galle', 'Gampaha', 'Hambantota',
+  'Jaffna', 'Kalutara', 'Kandy', 'Kegalle', 'Kilinochchi', 'Kurunegala', 'Mannar', 'Matale',
+  'Matara', 'Monaragala', 'Mullaitivu', 'Nuwara Eliya', 'Polonnaruwa', 'Puttalam', 'Ratnapura',
+  'Trincomalee', 'Vavuniya'
+];
+
 const AdminDashboard = () => {
   const [currentView, setCurrentView] = useState('dashboard');
   const [stats, setStats] = useState({
@@ -13,12 +20,40 @@ const AdminDashboard = () => {
     totalOrders: 0
   });
   const [recentActivity, setRecentActivity] = useState([]);
+  const [showWarehouseForm, setShowWarehouseForm] = useState(false);
+  const [warehouseForm, setWarehouseForm] = useState({
+    managerName: '',
+    district: '',
+    address: '',
+    phoneNumber: '',
+    password: ''
+  });
+  const [formError, setFormError] = useState('');
 
   useEffect(() => {
     // Fetch admin statistics
     fetchStats();
     fetchRecentActivity();
   }, []);
+
+  const handleWarehouseInputChange = (e) => {
+    const { name, value } = e.target;
+    setWarehouseForm((prev) => ({ ...prev, [name]: value }));
+  };
+  const handleWarehouseSubmit = (e) => {
+    e.preventDefault();
+    // Simple validation
+    if (!warehouseForm.managerName || !warehouseForm.district || !warehouseForm.address || !warehouseForm.phoneNumber || !warehouseForm.password) {
+      setFormError('All fields are required.');
+      return;
+    }
+    setFormError('');
+    // TODO: Replace with API call
+    console.log('Register Warehouse:', warehouseForm);
+    alert('Warehouse registration submitted! (API integration pending)');
+    setShowWarehouseForm(false);
+    setWarehouseForm({ managerName: '', district: '', address: '', phoneNumber: '', password: '' });
+  };
 
   const fetchStats = async () => {
     try {
@@ -191,6 +226,77 @@ const AdminDashboard = () => {
               <button className="w-full bg-pink-600 text-white px-4 py-2 rounded hover:bg-pink-700">
                 Backup & Maintenance
               </button>
+              <button
+                className="w-full bg-green-700 text-white px-4 py-2 rounded hover:bg-green-800"
+                onClick={() => setShowWarehouseForm((prev) => !prev)}
+              >
+                {showWarehouseForm ? 'Close Warehouse Registration' : 'Register New Warehouse'}
+              </button>
+              {showWarehouseForm && (
+                <form className="mt-4 space-y-3 bg-gray-50 p-4 rounded" onSubmit={handleWarehouseSubmit}>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Manager Name</label>
+                    <input
+                      type="text"
+                      name="managerName"
+                      value={warehouseForm.managerName}
+                      onChange={handleWarehouseInputChange}
+                      className="mt-1 block w-full border border-gray-300 rounded px-2 py-1"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">District</label>
+                    <select
+                      name="district"
+                      value={warehouseForm.district}
+                      onChange={handleWarehouseInputChange}
+                      className="mt-1 block w-full border border-gray-300 rounded px-2 py-1"
+                    >
+                      <option value="">Select District</option>
+                      {DISTRICTS.map((district) => (
+                        <option key={district} value={district}>{district}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Address</label>
+                    <input
+                      type="text"
+                      name="address"
+                      value={warehouseForm.address}
+                      onChange={handleWarehouseInputChange}
+                      className="mt-1 block w-full border border-gray-300 rounded px-2 py-1"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Phone Number</label>
+                    <input
+                      type="text"
+                      name="phoneNumber"
+                      value={warehouseForm.phoneNumber}
+                      onChange={handleWarehouseInputChange}
+                      className="mt-1 block w-full border border-gray-300 rounded px-2 py-1"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Password</label>
+                    <input
+                      type="password"
+                      name="password"
+                      value={warehouseForm.password}
+                      onChange={handleWarehouseInputChange}
+                      className="mt-1 block w-full border border-gray-300 rounded px-2 py-1"
+                    />
+                  </div>
+                  {formError && <div className="text-red-600 text-sm">{formError}</div>}
+                  <button
+                    type="submit"
+                    className="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 mt-2"
+                  >
+                    Register
+                  </button>
+                </form>
+              )}
             </div>
           </div>
         </div>
