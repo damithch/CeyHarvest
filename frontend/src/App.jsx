@@ -13,6 +13,7 @@ import AdminDashboard from './components/dashboard/AdminDashboard';
 import FarmerDashboard from './components/dashboard/FarmerDashboard';
 import BuyerDashboard from './components/dashboard/BuyerDashboard';
 import DriverDashboard from './components/dashboard/DriverDashboard';
+import WarehouseDashboard from './components/dashboard/WarehouseDashboard';
 import ProfileSettings from './components/user/ProfileSettings';
 import { ROUTES, getRoleDashboard } from './constants/routes';
 
@@ -127,9 +128,17 @@ function App() {
             } 
           />
           <Route 
-            path={ROUTES.DRIVER.PROFILE}
+            path={ROUTES.WAREHOUSE.DASHBOARD}
             element={
-              <ProtectedRoute allowedRoles={['DRIVER']}>
+              <ProtectedRoute allowedRoles={['WAREHOUSE']}>
+                <WarehouseDashboard />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path={ROUTES.WAREHOUSE.PROFILE}
+            element={
+              <ProtectedRoute allowedRoles={['WAREHOUSE']}>
                 <ProfileSettings />
               </ProtectedRoute>
             } 

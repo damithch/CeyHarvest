@@ -2,6 +2,9 @@ package com.ceyharvest.ceyharvest.controller.admin;
 
 import com.ceyharvest.ceyharvest.document.*;
 import com.ceyharvest.ceyharvest.repository.*;
+import com.ceyharvest.ceyharvest.dto.WarehouseRegisterDTO;
+import com.ceyharvest.ceyharvest.document.Warehouse;
+import com.ceyharvest.ceyharvest.repository.WarehouseRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpHeaders;
@@ -17,6 +20,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -34,6 +38,10 @@ public class AdminController {
     
     @Autowired
     private DriverRepository driverRepository;
+    @Autowired
+    private WarehouseRepository warehouseRepository;
+
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     /**
      * Get all farmers with comprehensive details
@@ -388,6 +396,30 @@ public class AdminController {
                 
         } catch (Exception e) {
             return ResponseEntity.status(500).body(("Error exporting users: " + e.getMessage()).getBytes());
+        }
+    }
+
+    /**
+     * Register a new warehouse (admin only)
+     */
+    @PostMapping("/warehouses/register")
+    public ResponseEntity<?> registerWarehouse(@RequestBody WarehouseRegisterDTO dto) {
+        try {
+            // Check for duplicate phone number
+            if (warehouseRepository.findByPhoneNumber(dto.getPhoneNumber()).isPresent()) {
+                return ResponseEntity.badRequest().body("Warehouse with this phone number already exists.");
+            }
+            Warehouse warehouse = new Warehouse();
+            warehouse.setManagerName(dto.getManagerName());
+            warehouse.setDistrict(dto.getDistrict());
+            warehouse.setAddress(dto.getAddress());
+            warehouse.setPhoneNumber(dto.getPhoneNumber());
+            warehouse.setPassword(passwordEncoder.encode(dto.getPassword()));
+            warehouse.setCreatedAt(java.time.LocalDateTime.now());
+            warehouseRepository.save(warehouse);
+            return ResponseEntity.ok("Warehouse registered successfully.");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error registering warehouse: " + e.getMessage());
         }
     }
 
