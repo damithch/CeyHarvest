@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/warehouse")
@@ -133,5 +134,90 @@ public class WarehouseController {
         }
         productRepository.save(toSave);
         return ResponseEntity.ok(toSave);
+    }
+
+    // Edit a product for a farmer
+    @PutMapping("/farmer/{farmerId}/products/{productId}")
+    public ResponseEntity<?> editProductForFarmer(@PathVariable String farmerId, @PathVariable String productId, @RequestBody Product updated) {
+        Optional<Product> existingOpt = productRepository.findById(productId);
+        if (existingOpt.isEmpty()) return ResponseEntity.notFound().build();
+        Product existing = existingOpt.get();
+        if (!farmerId.equals(existing.getFarmerId())) return ResponseEntity.status(403).body("Not allowed");
+        // If price or stock changes, add to price history
+        boolean priceChanged = updated.getLatestPrice() != existing.getLatestPrice();
+        boolean stockChanged = updated.getTotalStock() != existing.getTotalStock();
+        if (priceChanged || stockChanged) {
+            if (existing.getPriceHistory() == null) existing.setPriceHistory(new java.util.ArrayList<>());
+            Product.PriceHistory ph = new Product.PriceHistory();
+            ph.setPrice(updated.getLatestPrice());
+            ph.setStockAdded(updated.getTotalStock() - existing.getTotalStock());
+            ph.setTimestamp(java.time.LocalDateTime.now());
+            existing.getPriceHistory().add(ph);
+        }
+        existing.setProductName(updated.getProductName());
+        existing.setLocation(updated.getLocation());
+        existing.setTotalStock(updated.getTotalStock());
+        existing.setLatestPrice(updated.getLatestPrice());
+        existing.setHarvestDay(updated.getHarvestDay());
+        existing.setShelfLife(updated.getShelfLife());
+        productRepository.save(existing);
+        return ResponseEntity.ok(existing);
+    }
+
+    // Delete a product for a farmer
+    @DeleteMapping("/farmer/{farmerId}/products/{productId}")
+    public ResponseEntity<?> deleteProductForFarmer(@PathVariable String farmerId, @PathVariable String productId) {
+        Optional<Product> existingOpt = productRepository.findById(productId);
+        if (existingOpt.isEmpty()) return ResponseEntity.notFound().build();
+        Product existing = existingOpt.get();
+        if (!farmerId.equals(existing.getFarmerId())) return ResponseEntity.status(403).body("Not allowed");
+        productRepository.deleteById(productId);
+        return ResponseEntity.ok().build();
+    }
+
+    // Product summary for warehouse
+    @GetMapping("/{warehouseId}/products/summary")
+    public ResponseEntity<?> getWarehouseProductSummary(@PathVariable String warehouseId) {
+        // Get all farmers in this warehouse
+        List<Farmer> farmers = farmerRepository.findByWarehouseIdsContaining(warehouseId);
+        // Get all products for these farmers
+        List<Product> allProducts = new java.util.ArrayList<>();
+        for (Farmer farmer : farmers) {
+            allProducts.addAll(productRepository.findByFarmerId(farmer.getId()));
+        }
+        // Group by productName
+        Map<String, List<Product>> grouped = allProducts.stream().collect(java.util.stream.Collectors.groupingBy(Product::getProductName));
+        // Build summary
+        List<java.util.Map<String, Object>> summary = new java.util.ArrayList<>();
+        for (var entry : grouped.entrySet()) {
+            String productName = entry.getKey();
+            List<Product> products = entry.getValue();
+            int totalStock = products.stream().mapToInt(Product::getTotalStock).sum();
+            double latestPrice = products.stream().mapToDouble(Product::getLatestPrice).max().orElse(0);
+            summary.add(java.util.Map.of(
+                "productName", productName,
+                "totalStock", totalStock,
+                "latestPrice", latestPrice
+            ));
+        }
+        return ResponseEntity.ok(summary);
+    }
+
+    // Farmers for a product in a warehouse
+    @GetMapping("/{warehouseId}/products/{productName}/farmers")
+    public ResponseEntity<?> getFarmersForProductInWarehouse(@PathVariable String warehouseId, @PathVariable String productName) {
+        List<Farmer> farmers = farmerRepository.findByWarehouseIdsContaining(warehouseId);
+        List<java.util.Map<String, Object>> result = new java.util.ArrayList<>();
+        for (Farmer farmer : farmers) {
+            productRepository.findByFarmerIdAndProductName(farmer.getId(), productName).ifPresent(product -> {
+                result.add(java.util.Map.of(
+                    "farmerId", farmer.getId(),
+                    "farmerName", farmer.getFirstName() + " " + farmer.getLastName(),
+                    "stock", product.getTotalStock(),
+                    "price", product.getLatestPrice()
+                ));
+            });
+        }
+        return ResponseEntity.ok(result);
     }
 } 

@@ -19,6 +19,12 @@ const WarehouseDashboard = () => {
   const [loadingFarmers, setLoadingFarmers] = useState(false);
   const [farmerError, setFarmerError] = useState('');
 
+  // Warehouse product summary state
+  const [productSummary, setProductSummary] = useState([]);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [farmersForProduct, setFarmersForProduct] = useState([]);
+  const [showFarmersModal, setShowFarmersModal] = useState(false);
+
   // Fetch farmers for this warehouse
   useEffect(() => {
     if (!warehouseId) return;
@@ -52,6 +58,29 @@ const WarehouseDashboard = () => {
     };
     fetchFarmers();
   }, [warehouseId, search, sortBy, sortDir, showFarmerRegister]);
+
+  useEffect(() => {
+    if (!warehouseId) return;
+    // Fetch warehouse product summary
+    const fetchSummary = async () => {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`/api/warehouse/${warehouseId}/products/summary`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) setProductSummary(await res.json());
+    };
+    fetchSummary();
+  }, [warehouseId]);
+
+  const handleProductClick = async (productName) => {
+    setSelectedProduct(productName);
+    setShowFarmersModal(true);
+    const token = localStorage.getItem('token');
+    const res = await fetch(`/api/warehouse/${warehouseId}/products/${encodeURIComponent(productName)}/farmers`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (res.ok) setFarmersForProduct(await res.json());
+  };
 
   return (
     <DashboardLayout title="Warehouse Dashboard">
@@ -153,6 +182,62 @@ const WarehouseDashboard = () => {
             </div>
           )}
         </div>
+        {/* Warehouse Product Summary Section */}
+        <div className="mt-8">
+          <h3 className="text-lg font-semibold mb-2">Warehouse Product Summary</h3>
+          <table className="min-w-full bg-white border border-gray-200 rounded">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Total Stock</th>
+                <th>Latest Price</th>
+              </tr>
+            </thead>
+            <tbody>
+              {productSummary.map(prod => (
+                <tr key={prod.productName} className="cursor-pointer hover:bg-gray-100"
+                    onClick={() => handleProductClick(prod.productName)}>
+                  <td>{prod.productName}</td>
+                  <td>{prod.totalStock}</td>
+                  <td>{prod.latestPrice}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {/* Modal for farmers for a product */}
+        {showFarmersModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded shadow max-w-md w-full">
+              <h3 className="text-lg font-bold mb-2">Farmers for {selectedProduct}</h3>
+              <table className="min-w-full bg-white border border-gray-200 rounded mb-4">
+                <thead>
+                  <tr>
+                    <th>Farmer</th>
+                    <th>Stock</th>
+                    <th>Price</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {farmersForProduct.length === 0 ? (
+                    <tr><td colSpan={3} className="text-center py-2 text-gray-500">No farmers found</td></tr>
+                  ) : (
+                    farmersForProduct.map(f => (
+                      <tr key={f.farmerId}>
+                        <td>{f.farmerName}</td>
+                        <td>{f.stock}</td>
+                        <td>{f.price}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+              <div className="flex justify-end">
+                <button className="bg-gray-400 text-white px-4 py-2 rounded" onClick={() => setShowFarmersModal(false)}>Close</button>
+              </div>
+            </div>
+          </div>
+        )}
         <p className="text-gray-700 mt-8">This is your warehouse dashboard. Features for managing inventory, orders, and reports will appear here.</p>
       </div>
     </DashboardLayout>

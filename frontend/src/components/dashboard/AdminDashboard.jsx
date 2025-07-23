@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../layout/DashboardLayout';
 import UserManagement from '../user/UserManagement';
+import { useAuth } from '../../contexts/AuthContext';
 
 const DISTRICTS = [
   'Ampara', 'Anuradhapura', 'Badulla', 'Batticaloa', 'Colombo', 'Galle', 'Gampaha', 'Hambantota',
@@ -29,11 +30,40 @@ const AdminDashboard = () => {
     password: ''
   });
   const [formError, setFormError] = useState('');
+  const [warehouses, setWarehouses] = useState([]);
+  const [warehouseProductSummaries, setWarehouseProductSummaries] = useState({});
+  const [selectedWarehouseProduct, setSelectedWarehouseProduct] = useState(null);
+  const [farmersForProduct, setFarmersForProduct] = useState([]);
+  const [showFarmersModal, setShowFarmersModal] = useState(false);
+  const { user } = useAuth();
+
+  // Fetch all warehouses and their product summaries
+  const fetchWarehouses = async () => {
+    const token = localStorage.getItem('token');
+    const res = await fetch('/api/admin/warehouses', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setWarehouses(data);
+      // For each warehouse, fetch product summary (sequentially)
+      for (const wh of data) {
+        const summaryRes = await fetch(`/api/warehouse/${wh.id}/products/summary`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (summaryRes.ok) {
+          const summary = await summaryRes.json();
+          setWarehouseProductSummaries(prev => ({ ...prev, [wh.id]: summary }));
+        }
+      }
+    }
+  };
 
   useEffect(() => {
     // Fetch admin statistics
     fetchStats();
     fetchRecentActivity();
+    fetchWarehouses();
   }, []);
 
   const handleWarehouseInputChange = (e) => {
@@ -105,6 +135,16 @@ const AdminDashboard = () => {
     } catch (error) {
       console.error('Error fetching recent activity:', error);
     }
+  };
+
+  const handleProductClick = async (warehouseId, productName) => {
+    setSelectedWarehouseProduct({ warehouseId, productName });
+    setShowFarmersModal(true);
+    const token = localStorage.getItem('token');
+    const res = await fetch(`/api/warehouse/${warehouseId}/products/${encodeURIComponent(productName)}/farmers`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (res.ok) setFarmersForProduct(await res.json());
   };
 
   const StatCard = ({ title, value, icon, color }) => (
@@ -371,6 +411,76 @@ const AdminDashboard = () => {
             )}
           </ul>
         </div>
+        {/* Warehouses Section */}
+        <div className="mt-8">
+          <h3 className="text-xl font-semibold mb-4">All Warehouses</h3>
+          {warehouses.length === 0 ? (
+            <div className="text-gray-500">No warehouses found.</div>
+          ) : (
+            warehouses.map(wh => (
+              <div key={wh.id} className="mb-8 p-4 bg-gray-50 rounded shadow">
+                <div className="mb-2 font-bold text-green-700">Warehouse: {wh.managerName} ({wh.district})</div>
+                <div className="mb-2 text-sm text-gray-700">
+                  <span className="mr-4">Address: <strong>{wh.address}</strong></span>
+                  <span className="mr-4">Phone: <strong>{wh.phoneNumber}</strong></span>
+                </div>
+                <h4 className="font-semibold mb-1">Product Summary</h4>
+                <table className="min-w-full bg-white border border-gray-200 rounded mb-2">
+                  <thead>
+                    <tr>
+                      <th>Product</th>
+                      <th>Total Stock</th>
+                      <th>Latest Price</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(warehouseProductSummaries[wh.id] || []).map(prod => (
+                      <tr key={prod.productName} className="cursor-pointer hover:bg-gray-100"
+                          onClick={() => handleProductClick(wh.id, prod.productName)}>
+                        <td>{prod.productName}</td>
+                        <td>{prod.totalStock}</td>
+                        <td>{prod.latestPrice}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ))
+          )}
+        </div>
+        {/* Modal for farmers for a product in a warehouse */}
+        {showFarmersModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded shadow max-w-md w-full">
+              <h3 className="text-lg font-bold mb-2">Farmers for {selectedWarehouseProduct?.productName} (Warehouse)</h3>
+              <table className="min-w-full bg-white border border-gray-200 rounded mb-4">
+                <thead>
+                  <tr>
+                    <th>Farmer</th>
+                    <th>Stock</th>
+                    <th>Price</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {farmersForProduct.length === 0 ? (
+                    <tr><td colSpan={3} className="text-center py-2 text-gray-500">No farmers found</td></tr>
+                  ) : (
+                    farmersForProduct.map(f => (
+                      <tr key={f.farmerId}>
+                        <td>{f.farmerName}</td>
+                        <td>{f.stock}</td>
+                        <td>{f.price}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+              <div className="flex justify-end">
+                <button className="bg-gray-400 text-white px-4 py-2 rounded" onClick={() => setShowFarmersModal(false)}>Close</button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );
