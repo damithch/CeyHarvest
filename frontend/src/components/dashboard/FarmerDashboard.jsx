@@ -3,6 +3,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import DashboardLayout from '../layout/DashboardLayout';
 import YieldPrediction from '../prediction/YieldPrediction';
 import CropFeed from '../social/CropFeed';
+import ExpiredProductNotifications from '../products/ExpiredProductNotifications';
 
 const FarmerDashboard = () => {
   const { user, getAuthHeaders } = useAuth();
@@ -125,6 +126,16 @@ const FarmerDashboard = () => {
               🌾 Crop Feed
             </button>
             <button
+              onClick={() => setCurrentView('expired-products')}
+              className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm ${
+                currentView === 'expired-products'
+                  ? 'border-green-500 text-green-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              ⚠️ Expired Products
+            </button>
+            <button
               onClick={() => setCurrentView('yield-prediction')}
               className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm ${
                 currentView === 'yield-prediction'
@@ -178,6 +189,12 @@ const FarmerDashboard = () => {
                   </button>
                   <button className="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
                     View My Products
+                  </button>
+                  <button 
+                    onClick={() => setCurrentView('expired-products')}
+                    className="w-full bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+                  >
+                    ⚠️ Check Expired Items
                   </button>
                   <button className="w-full bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700">
                     Update Inventory
@@ -325,6 +342,11 @@ const FarmerDashboard = () => {
         {/* Crop Feed View */}
         {currentView === 'crop-feed' && (
           <CropFeed />
+        )}
+
+        {/* Expired Products View */}
+        {currentView === 'expired-products' && (
+          <ExpiredProductNotifications />
         )}
       </div>
     </DashboardLayout>

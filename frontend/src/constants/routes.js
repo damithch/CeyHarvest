@@ -37,6 +37,7 @@ export const ROUTES = {
     PRODUCTS: '/farmer/products',
     ORDERS: '/farmer/orders',
     CROP_FEED: '/farmer/crop-feed',
+    EXPIRED_PRODUCTS: '/farmer/expired-products',
   },
 
   // Driver routes
