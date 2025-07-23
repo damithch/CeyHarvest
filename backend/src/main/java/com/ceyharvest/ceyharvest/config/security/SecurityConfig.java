@@ -70,6 +70,8 @@ public class SecurityConfig {
                 // Driver endpoints - only for DRIVER role
                 .requestMatchers("/api/driver/**").hasRole("DRIVER")
                 
+                // Marketplace endpoint - public access
+                .requestMatchers("/api/warehouse/marketplace/products").permitAll()
                 // Warehouse endpoints - allow ADMIN and WAREHOUSE roles
                 .requestMatchers("/api/warehouse/**").hasAnyRole("ADMIN", "WAREHOUSE")
                 

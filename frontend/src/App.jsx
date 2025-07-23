@@ -113,6 +113,8 @@ function App() {
               </ProtectedRoute>
             } 
           />
+          {/* Public Marketplace route for everyone */}
+          <Route path="/marketplace" element={<Marketplace />} />
           <Route 
             path={ROUTES.FARMER.DASHBOARD}
             element={
