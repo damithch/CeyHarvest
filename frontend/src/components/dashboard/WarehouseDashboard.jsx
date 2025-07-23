@@ -1,3 +1,4 @@
+// WarehouseDashboard.jsx
 import React, { useState } from 'react';
 import DashboardLayout from '../layout/DashboardLayout';
 import EnhancedRegister from '../auth/EnhancedRegister';
