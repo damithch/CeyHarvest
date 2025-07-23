@@ -1,3 +1,4 @@
+// EnhancedRegister.jsx
 import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 
