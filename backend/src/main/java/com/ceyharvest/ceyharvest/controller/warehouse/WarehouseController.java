@@ -2,8 +2,10 @@ package com.ceyharvest.ceyharvest.controller.warehouse;
 
 import com.ceyharvest.ceyharvest.document.Farmer;
 import com.ceyharvest.ceyharvest.document.Product;
+import com.ceyharvest.ceyharvest.document.Warehouse;
 import com.ceyharvest.ceyharvest.repository.FarmerRepository;
 import com.ceyharvest.ceyharvest.repository.ProductRepository;
+import com.ceyharvest.ceyharvest.repository.WarehouseRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +28,8 @@ public class WarehouseController {
     private FarmerRepository farmerRepository;
     @Autowired
     private ProductRepository productRepository;
+    @Autowired
+    private WarehouseRepository warehouseRepository;
 
     /**
      * Get all farmers for a warehouse, with optional search and sort
@@ -217,6 +221,33 @@ public class WarehouseController {
                     "price", product.getLatestPrice()
                 ));
             });
+        }
+        return ResponseEntity.ok(result);
+    }
+
+    // Marketplace endpoint: get all products with warehouse info, filter by district if provided
+    @GetMapping("/marketplace/products")
+    public ResponseEntity<?> getMarketplaceProducts(@RequestParam(required = false) String district) {
+        List<Warehouse> warehouses = (district == null || district.isEmpty())
+            ? warehouseRepository.findAll()
+            : warehouseRepository.findAll().stream().filter(w -> district.equalsIgnoreCase(w.getDistrict())).toList();
+        List<Map<String, Object>> result = new java.util.ArrayList<>();
+        for (Warehouse wh : warehouses) {
+            List<Product> products = productRepository.findAll().stream()
+                .filter(p -> wh.getId().equals(p.getFarmerId()) || (p.getFarmerId() != null && wh.getId().equals(p.getFarmerId()))) // fallback for farmerId/warehouseId confusion
+                .toList();
+            for (Product prod : products) {
+                Map<String, Object> map = new java.util.HashMap<>();
+                map.put("productId", prod.getId());
+                map.put("productName", prod.getProductName());
+                map.put("latestPrice", prod.getLatestPrice());
+                map.put("totalStock", prod.getTotalStock());
+                map.put("warehouseId", wh.getId());
+                map.put("warehouseManager", wh.getManagerName());
+                map.put("district", wh.getDistrict());
+                map.put("address", wh.getAddress());
+                result.add(map);
+            }
         }
         return ResponseEntity.ok(result);
     }
