@@ -18,6 +18,7 @@ import Cart from './components/cart/Cart';
 import Checkout from './components/checkout/Checkout';
 import Marketplace from './components/marketplace/Marketplace';
 import Orders from './components/orders/Orders';
+import CropFeed from './components/social/CropFeed';
 import { ROUTES, getRoleDashboard } from './constants/routes';
 
 const Dashboard = () => {
@@ -151,6 +152,14 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={['FARMER']}>
                 <ProfileSettings />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path={ROUTES.FARMER.CROP_FEED}
+            element={
+              <ProtectedRoute allowedRoles={['FARMER']}>
+                <CropFeed />
               </ProtectedRoute>
             } 
           />
