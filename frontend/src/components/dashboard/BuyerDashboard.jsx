@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import DashboardLayout from '../layout/DashboardLayout';
 import ProfileSettings from '../user/ProfileSettings';
+import YieldPrediction from '../prediction/YieldPrediction';
 import { ROUTES } from '../../constants/routes';
 
 const BuyerDashboard = () => {
@@ -112,6 +113,22 @@ const BuyerDashboard = () => {
     return <ProfileSettings onBack={() => setCurrentView('dashboard')} />;
   }
 
+  if (currentView === 'yield-prediction') {
+    return (
+      <DashboardLayout title="Yield Prediction">
+        <div className="mb-4">
+          <button
+            onClick={() => setCurrentView('dashboard')}
+            className="text-blue-600 hover:text-blue-800 flex items-center"
+          >
+            ← Back to Dashboard
+          </button>
+        </div>
+        <YieldPrediction />
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout title="Buyer Dashboard">
       <div className="space-y-6">
@@ -144,7 +161,7 @@ const BuyerDashboard = () => {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <div className="bg-white p-6 rounded-lg shadow">
             <h3 className="text-lg font-medium text-gray-900 mb-4">Shopping</h3>
             <div className="space-y-3">
@@ -186,6 +203,24 @@ const BuyerDashboard = () => {
                 className="w-full bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700"
               >
                 Profile Settings
+              </button>
+            </div>
+          </div>
+
+          <div className="bg-white p-6 rounded-lg shadow">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Market Analysis</h3>
+            <div className="space-y-3">
+              <button 
+                onClick={() => setCurrentView('yield-prediction')}
+                className="w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+              >
+                🌾 Yield Predictions
+              </button>
+              <button className="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                📊 Price Trends
+              </button>
+              <button className="w-full bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700">
+                📈 Market Reports
               </button>
             </div>
           </div>
