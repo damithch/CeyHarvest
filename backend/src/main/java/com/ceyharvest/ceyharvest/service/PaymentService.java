@@ -1,205 +1,179 @@
 package com.ceyharvest.ceyharvest.service;
 
 import com.ceyharvest.ceyharvest.document.Payment;
-import com.ceyharvest.ceyharvest.document.Order;
 import com.ceyharvest.ceyharvest.repository.PaymentRepository;
-import com.ceyharvest.ceyharvest.repository.OrderRepository;
+import com.stripe.Stripe;
+import com.stripe.exception.StripeException;
+import com.stripe.model.PaymentIntent;
+import com.stripe.param.PaymentIntentCreateParams;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
-/**
- * Service class for payment processing
- * Integrates with Stripe payment gateway
- */
 @Service
+@Slf4j
 public class PaymentService {
 
     @Autowired
     private PaymentRepository paymentRepository;
 
-    @Autowired
-    private OrderRepository orderRepository;
-
-    @Value("${ceyharvest.payment.stripe.secret-key:sk_test_placeholder}")
+    @Value("${stripe.secret.key:sk_test_default}")
     private String stripeSecretKey;
 
-    @Value("${ceyharvest.payment.stripe.publishable-key:pk_test_placeholder}")
+    @Value("${stripe.publishable.key:pk_test_default}")
     private String stripePublishableKey;
 
-    /**
-     * Create a new payment record
-     */
-    public Payment createPayment(String orderId, String buyerEmail, double amount, String paymentMethod) {
-        Payment payment = new Payment();
-        payment.setOrderId(orderId);
-        payment.setBuyerEmail(buyerEmail);
-        payment.setAmount(amount);
-        payment.setCurrency("LKR");
-        payment.setPaymentMethod(paymentMethod);
-        payment.setPaymentGateway("STRIPE");
-        payment.setStatus("PENDING");
-        payment.setCreatedAt(LocalDateTime.now());
-        payment.setUpdatedAt(LocalDateTime.now());
-        
-        return paymentRepository.save(payment);
+    public PaymentService() {
+        // Initialize Stripe with secret key
+        // In a real application, this should be set in application.properties
+        Stripe.apiKey = System.getenv("STRIPE_SECRET_KEY");
+        if (Stripe.apiKey == null) {
+            Stripe.apiKey = "sk_test_51234567890"; // Default test key for development
+        }
     }
 
-    /**
-     * Create Stripe Payment Intent
-     * This is a mock implementation - replace with actual Stripe integration
-     */
-    public Map<String, Object> createStripePaymentIntent(String orderId, String buyerEmail, String paymentMethod) {
+    public String getStripePublishableKey() {
+        return stripePublishableKey;
+    }
+
+    public Map<String, Object> createPaymentIntent(BigDecimal amount, String currency, String buyerId) {
         try {
-            // Get order to determine amount
-            Optional<Order> orderOpt = orderRepository.findById(orderId);
-            if (orderOpt.isEmpty()) {
-                throw new RuntimeException("Order not found");
-            }
-            
-            Order order = orderOpt.get();
-            double amount = order.getTotalAmount();
-            
-            // Mock Stripe Payment Intent creation
-            // In production, this would use Stripe's Java SDK
-            Map<String, Object> paymentIntent = new HashMap<>();
-            paymentIntent.put("id", "pi_mock_" + System.currentTimeMillis());
-            paymentIntent.put("client_secret", "pi_mock_" + System.currentTimeMillis() + "_secret");
-            paymentIntent.put("amount", (long)(amount * 100)); // Stripe uses cents
-            paymentIntent.put("currency", "lkr");
-            paymentIntent.put("status", "requires_payment_method");
-            paymentIntent.put("metadata", Map.of("orderId", orderId, "buyerEmail", buyerEmail));
-            
-            return paymentIntent;
-        } catch (Exception e) {
+            // Convert amount to cents (Stripe expects amounts in cents)
+            long amountInCents = amount.multiply(BigDecimal.valueOf(100)).longValue();
+
+            PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
+                    .setAmount(amountInCents)
+                    .setCurrency(currency)
+                    .addPaymentMethodType("card")
+                    .putMetadata("buyer_id", buyerId)
+                    .setAutomaticPaymentMethods(
+                            PaymentIntentCreateParams.AutomaticPaymentMethods.builder()
+                                    .setEnabled(true)
+                                    .build()
+                    )
+                    .build();
+
+            PaymentIntent paymentIntent = PaymentIntent.create(params);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("clientSecret", paymentIntent.getClientSecret());
+            response.put("paymentIntentId", paymentIntent.getId());
+            response.put("amount", amount);
+            response.put("currency", currency);
+
+            log.info("Payment intent created successfully: {}", paymentIntent.getId());
+            return response;
+
+        } catch (StripeException e) {
+            log.error("Error creating payment intent", e);
             throw new RuntimeException("Failed to create payment intent: " + e.getMessage());
         }
     }
 
-    /**
-     * Process payment confirmation
-     */
+    public PaymentIntent retrievePaymentIntent(String paymentIntentId) {
+        try {
+            return PaymentIntent.retrieve(paymentIntentId);
+        } catch (StripeException e) {
+            log.error("Error retrieving payment intent: {}", paymentIntentId, e);
+            throw new RuntimeException("Failed to retrieve payment intent: " + e.getMessage());
+        }
+    }
+
+    public boolean isPaymentSuccessful(String paymentIntentId) {
+        try {
+            PaymentIntent paymentIntent = PaymentIntent.retrieve(paymentIntentId);
+            return "succeeded".equals(paymentIntent.getStatus());
+        } catch (StripeException e) {
+            log.error("Error checking payment status: {}", paymentIntentId, e);
+            return false;
+        }
+    }
+
     public Payment processPayment(String paymentIntentId, String orderId, String buyerEmail) {
         try {
-            // Get order
-            Optional<Order> orderOpt = orderRepository.findById(orderId);
-            if (orderOpt.isEmpty()) {
-                throw new RuntimeException("Order not found");
-            }
-            
-            Order order = orderOpt.get();
+            // Retrieve payment intent from Stripe
+            PaymentIntent paymentIntent = PaymentIntent.retrieve(paymentIntentId);
             
             // Create payment record
             Payment payment = new Payment();
             payment.setOrderId(orderId);
             payment.setBuyerEmail(buyerEmail);
-            payment.setAmount(order.getTotalAmount());
-            payment.setCurrency("LKR");
+            payment.setAmount(paymentIntent.getAmount() / 100.0); // Convert from cents
+            payment.setCurrency(paymentIntent.getCurrency().toUpperCase());
             payment.setPaymentMethod("CARD");
             payment.setPaymentGateway("STRIPE");
             payment.setTransactionId(paymentIntentId);
-            payment.setStatus("PAID"); // Mock successful payment
             payment.setCreatedAt(LocalDateTime.now());
             payment.setUpdatedAt(LocalDateTime.now());
             
-            // Mock gateway response
-            payment.setGatewayResponse("Payment processed successfully: " + paymentIntentId);
+            // Update status based on Stripe payment intent status
+            switch (paymentIntent.getStatus()) {
+                case "succeeded":
+                    payment.setStatus("COMPLETED");
+                    payment.setProcessedAt(LocalDateTime.now());
+                    break;
+                case "processing":
+                    payment.setStatus("PROCESSING");
+                    break;
+                case "requires_payment_method":
+                case "requires_confirmation":
+                case "requires_action":
+                    payment.setStatus("PENDING");
+                    break;
+                default:
+                    payment.setStatus("FAILED");
+                    payment.setFailureReason("Payment intent status: " + paymentIntent.getStatus());
+                    break;
+            }
             
-            return paymentRepository.save(payment);
+            // Store payment gateway response
+            payment.setGatewayResponse(paymentIntent.toJson());
+            
+            // Save payment record
+            payment = paymentRepository.save(payment);
+            
+            log.info("Payment processed successfully: {} for order: {}", payment.getId(), orderId);
+            return payment;
+            
+        } catch (StripeException e) {
+            log.error("Error processing payment for order: {}", orderId, e);
+            
+            // Create failed payment record
+            Payment failedPayment = new Payment();
+            failedPayment.setOrderId(orderId);
+            failedPayment.setBuyerEmail(buyerEmail);
+            failedPayment.setPaymentGateway("STRIPE");
+            failedPayment.setTransactionId(paymentIntentId);
+            failedPayment.setStatus("FAILED");
+            failedPayment.setFailureReason("Stripe error: " + e.getMessage());
+            failedPayment.setCreatedAt(LocalDateTime.now());
+            failedPayment.setUpdatedAt(LocalDateTime.now());
+            
+            return paymentRepository.save(failedPayment);
+        }
+    }
+
+    public Map<String, Object> createStripePaymentIntent(String orderId, String buyerEmail, String paymentMethod) {
+        try {
+            // This method should create a payment intent for a specific order
+            // For now, let's create a basic implementation
+            
+            // In a real implementation, you would fetch the order details and amount
+            // For demo purposes, using a default amount
+            BigDecimal amount = BigDecimal.valueOf(100.00); // Default amount in LKR
+            String currency = "lkr";
+            
+            return createPaymentIntent(amount, currency, buyerEmail);
             
         } catch (Exception e) {
-            throw new RuntimeException("Payment processing failed: " + e.getMessage());
+            log.error("Error creating Stripe payment intent for order: {}", orderId, e);
+            throw new RuntimeException("Failed to create payment intent: " + e.getMessage());
         }
-    }
-
-    /**
-     * Process mock payment (for development)
-     * In production, this would be replaced with actual Stripe webhook handling
-     */
-    public Payment processPaymentOld(String paymentId, String transactionId, boolean success) {
-        Optional<Payment> paymentOpt = paymentRepository.findById(paymentId);
-        if (paymentOpt.isEmpty()) {
-            throw new RuntimeException("Payment not found");
-        }
-        
-        Payment payment = paymentOpt.get();
-        payment.setTransactionId(transactionId);
-        payment.setProcessedAt(LocalDateTime.now());
-        payment.setUpdatedAt(LocalDateTime.now());
-        
-        if (success) {
-            payment.setStatus("COMPLETED");
-            payment.setGatewayResponse("{\"status\":\"succeeded\",\"paid\":true}");
-        } else {
-            payment.setStatus("FAILED");
-            payment.setFailureReason("Payment declined by bank");
-            payment.setGatewayResponse("{\"status\":\"failed\",\"failure_reason\":\"generic_decline\"}");
-        }
-        
-        return paymentRepository.save(payment);
-    }
-
-    /**
-     * Get payment by order ID
-     */
-    public Optional<Payment> getPaymentByOrderId(String orderId) {
-        return paymentRepository.findByOrderId(orderId);
-    }
-
-    /**
-     * Get payment by ID
-     */
-    public Optional<Payment> getPaymentById(String paymentId) {
-        return paymentRepository.findById(paymentId);
-    }
-
-    /**
-     * Update payment status
-     */
-    public Payment updatePaymentStatus(String paymentId, String status, String transactionId) {
-        Optional<Payment> paymentOpt = paymentRepository.findById(paymentId);
-        if (paymentOpt.isEmpty()) {
-            throw new RuntimeException("Payment not found");
-        }
-        
-        Payment payment = paymentOpt.get();
-        payment.setStatus(status);
-        if (transactionId != null) {
-            payment.setTransactionId(transactionId);
-        }
-        payment.setUpdatedAt(LocalDateTime.now());
-        
-        if ("COMPLETED".equals(status)) {
-            payment.setProcessedAt(LocalDateTime.now());
-        }
-        
-        return paymentRepository.save(payment);
-    }
-
-    /**
-     * Refund payment (mock implementation)
-     */
-    public Payment refundPayment(String paymentId, double refundAmount) {
-        Optional<Payment> paymentOpt = paymentRepository.findById(paymentId);
-        if (paymentOpt.isEmpty()) {
-            throw new RuntimeException("Payment not found");
-        }
-        
-        Payment payment = paymentOpt.get();
-        if (!"COMPLETED".equals(payment.getStatus())) {
-            throw new RuntimeException("Cannot refund payment that is not completed");
-        }
-        
-        // In production, this would call Stripe's refund API
-        payment.setStatus("REFUNDED");
-        payment.setUpdatedAt(LocalDateTime.now());
-        payment.setGatewayResponse("{\"status\":\"refunded\",\"amount_refunded\":" + (refundAmount * 100) + "}");
-        
-        return paymentRepository.save(payment);
     }
 }

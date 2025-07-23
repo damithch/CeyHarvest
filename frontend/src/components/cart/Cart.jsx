@@ -32,7 +32,7 @@ const Cart = () => {
         return;
       }
 
-      const response = await fetch('http://localhost:8080/api/buyer/cart', {
+      const response = await fetch('/api/buyer/cart', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -69,7 +69,7 @@ const Cart = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:8080/api/buyer/cart/update', {
+      const response = await fetch('/api/buyer/cart/update', {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -101,7 +101,7 @@ const Cart = () => {
 
   const removeFromCart = async (productId) => {
     try {
-      const response = await fetch(`http://localhost:8080/api/buyer/cart/remove/${productId}`, {
+      const response = await fetch(`/api/buyer/cart/remove/${productId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -121,7 +121,7 @@ const Cart = () => {
 
   const clearCart = async () => {
     try {
-      const response = await fetch('http://localhost:8080/api/buyer/cart/clear', {
+      const response = await fetch('/api/buyer/cart/clear', {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -141,7 +141,7 @@ const Cart = () => {
 
   const calculateTotal = () => {
     return cartItems.reduce((total, item) => {
-      return total + (item.price * item.quantity);
+      return total + (item.totalAmount || 0);
     }, 0).toFixed(2);
   };
 
@@ -265,7 +265,7 @@ const Cart = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        LKR {item.price.toFixed(2)}
+                        LKR {item.productPrice?.toFixed(2) || '0.00'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center space-x-2">
@@ -287,7 +287,7 @@ const Cart = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        LKR {(item.price * item.quantity).toFixed(2)}
+                        LKR {item.totalAmount?.toFixed(2) || '0.00'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <button

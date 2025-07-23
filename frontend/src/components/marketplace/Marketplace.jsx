@@ -18,7 +18,7 @@ const Marketplace = () => {
     try {
       setLoading(true);
       // First, create sample data if needed
-      await fetch('http://localhost:8080/api/dev/sample-data/create', {
+      await fetch('/api/dev/sample-data/create', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -27,7 +27,7 @@ const Marketplace = () => {
       });
 
       // Then fetch products
-      const response = await fetch('http://localhost:8080/api/dev/sample-data/products', {
+      const response = await fetch('/api/dev/sample-data/products', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -53,7 +53,7 @@ const Marketplace = () => {
     setSuccess('');
 
     try {
-      const response = await fetch('http://localhost:8080/api/buyer/cart/add', {
+      const response = await fetch('/api/buyer/cart/add', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

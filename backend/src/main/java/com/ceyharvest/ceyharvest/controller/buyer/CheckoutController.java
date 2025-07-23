@@ -28,6 +28,16 @@ public class CheckoutController {
     private PaymentService paymentService;
 
     /**
+     * Get Stripe configuration
+     */
+    @GetMapping("/stripe-config")
+    public ResponseEntity<Map<String, Object>> getStripeConfig() {
+        Map<String, Object> response = new HashMap<>();
+        response.put("publishableKey", paymentService.getStripePublishableKey());
+        return ResponseEntity.ok(response);
+    }
+
+    /**
      * Create order from cart and initialize payment
      */
     @PostMapping("/create-order")
@@ -54,6 +64,7 @@ public class CheckoutController {
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("order", order);
+            response.put("orderId", order.getId()); // Add explicit orderId for frontend compatibility
             response.put("orderItems", orderItems);
             response.put("message", "Order created successfully");
             
@@ -78,6 +89,14 @@ public class CheckoutController {
         try {
             String buyerEmail = authentication.getName();
             
+            // Validate request
+            if (request.getOrderId() == null || request.getOrderId().isEmpty()) {
+                throw new RuntimeException("Order ID is required");
+            }
+            if (request.getPaymentMethod() == null || request.getPaymentMethod().isEmpty()) {
+                throw new RuntimeException("Payment method is required");
+            }
+            
             // Create payment intent
             Map<String, Object> paymentIntent = paymentService.createStripePaymentIntent(
                 request.getOrderId(),
@@ -92,9 +111,12 @@ public class CheckoutController {
             return ResponseEntity.ok(response);
             
         } catch (Exception e) {
+            e.printStackTrace(); // Add debug logging
             Map<String, Object> response = new HashMap<>();
             response.put("success", false);
             response.put("error", e.getMessage());
+            response.put("orderId", request != null ? request.getOrderId() : "null");
+            response.put("paymentMethod", request != null ? request.getPaymentMethod() : "null");
             return ResponseEntity.badRequest().body(response);
         }
     }

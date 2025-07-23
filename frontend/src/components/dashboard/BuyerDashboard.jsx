@@ -46,8 +46,8 @@ const BuyerDashboard = () => {
 
   const fetchOrders = async () => {
     try {
-      // Use email for buyer orders since Order.customerEmail is used
-      const response = await fetch(`/api/buyer/${user.email}/orders`, {
+      // Get buyer orders using the correct endpoint
+      const response = await fetch(`/api/buyer/orders`, {
         headers: {
           'Content-Type': 'application/json',
           ...getAuthHeaders()
@@ -55,7 +55,13 @@ const BuyerDashboard = () => {
       });
       if (response.ok) {
         const data = await response.json();
-        setOrders(data);
+        // Ensure we always have an array for orders
+        if (data.success && Array.isArray(data.orders)) {
+          setOrders(data.orders);
+        } else {
+          setOrders([]);
+          console.warn('Unexpected orders API response structure:', data);
+        }
       }
     } catch (error) {
       console.error('Error fetching orders:', error);

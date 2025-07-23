@@ -17,7 +17,7 @@ const DashboardLayout = ({ children, title }) => {
 
   const fetchCartCount = async () => {
     try {
-      const response = await fetch('http://localhost:8080/api/buyer/cart', {
+      const response = await fetch('/api/buyer/cart', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'

@@ -15,7 +15,7 @@ const Orders = () => {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:8080/api/buyer/${user.email}/orders`, {
+      const response = await fetch(`/api/buyer/orders`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -24,7 +24,13 @@ const Orders = () => {
 
       if (response.ok) {
         const data = await response.json();
-        setOrders(data);
+        // Ensure we always have an array for orders
+        if (data.success && Array.isArray(data.orders)) {
+          setOrders(data.orders);
+        } else {
+          setOrders([]);
+          console.warn('Unexpected API response structure:', data);
+        }
       } else {
         setError('Failed to load orders');
       }
@@ -176,11 +182,13 @@ const Orders = () => {
                           Payment Status
                         </span>
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          order.paymentStatus === 'COMPLETED' ? 'bg-green-100 text-green-800' :
+                          order.paymentStatus === 'PAID' ? 'bg-green-100 text-green-800' :
                           order.paymentStatus === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
                           'bg-red-100 text-red-800'
                         }`}>
-                          {order.paymentStatus}
+                          {order.paymentStatus === 'PAID' ? 'Payment Verified' : 
+                           order.paymentStatus === 'PENDING' ? 'Payment Pending' :
+                           order.paymentStatus}
                         </span>
                       </div>
                     </div>
