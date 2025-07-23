@@ -15,6 +15,10 @@ import BuyerDashboard from './components/dashboard/BuyerDashboard';
 import DriverDashboard from './components/dashboard/DriverDashboard';
 import WarehouseDashboard from './components/dashboard/WarehouseDashboard';
 import ProfileSettings from './components/user/ProfileSettings';
+import Cart from './components/cart/Cart';
+import Checkout from './components/checkout/Checkout';
+import Marketplace from './components/marketplace/Marketplace';
+import Orders from './components/orders/Orders';
 import { ROUTES, getRoleDashboard } from './constants/routes';
 
 const Dashboard = () => {
@@ -100,6 +104,38 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={['BUYER']}>
                 <ProfileSettings />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path={ROUTES.BUYER.ORDERS}
+            element={
+              <ProtectedRoute allowedRoles={['BUYER']}>
+                <Orders />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path={ROUTES.BUYER.MARKETPLACE}
+            element={
+              <ProtectedRoute allowedRoles={['BUYER']}>
+                <Marketplace />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path={ROUTES.BUYER.CART}
+            element={
+              <ProtectedRoute allowedRoles={['BUYER']}>
+                <Cart />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path={ROUTES.BUYER.CHECKOUT}
+            element={
+              <ProtectedRoute allowedRoles={['BUYER']}>
+                <Checkout />
               </ProtectedRoute>
             } 
           />

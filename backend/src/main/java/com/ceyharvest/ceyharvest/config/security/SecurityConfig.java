@@ -58,6 +58,17 @@ public class SecurityConfig {
                 // Temporary password reset endpoint (REMOVE IN PRODUCTION)
                 .requestMatchers("/api/admin/reset/**").permitAll()
                 
+                // Development endpoints (REMOVE IN PRODUCTION)
+                .requestMatchers("/api/dev/**").permitAll()
+                
+                // Development cart endpoints (REMOVE IN PRODUCTION)
+                .requestMatchers("/api/dev/cart/**").permitAll()
+                
+                // Test endpoints (REMOVE IN PRODUCTION)
+                .requestMatchers("/api/buyer/checkout/test").permitAll()
+                .requestMatchers("/api/buyer/checkout/test-payment-intent").permitAll()
+                .requestMatchers("/api/buyer/checkout/stripe-config").permitAll()
+                
                 // Admin endpoints - only for ADMIN role
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 

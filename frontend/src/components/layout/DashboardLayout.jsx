@@ -1,10 +1,40 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../../constants/routes';
 
 const DashboardLayout = ({ children, title }) => {
-  const { user, logout } = useAuth();
+  const { user, logout, token } = useAuth();
   const navigate = useNavigate();
+  const [cartItemCount, setCartItemCount] = useState(0);
+
+  // Fetch cart item count for buyers
+  useEffect(() => {
+    if (user?.role === 'BUYER' && token) {
+      fetchCartCount();
+    }
+  }, [user, token]);
+
+  const fetchCartCount = async () => {
+    try {
+      const response = await fetch('/api/buyer/cart', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const totalItems = data.items?.reduce((total, item) => total + item.quantity, 0) || 0;
+        setCartItemCount(totalItems);
+      }
+    } catch (error) {
+      console.error('Error fetching cart count:', error);
+      // Silently fail for cart count - don't show errors in the navigation
+      setCartItemCount(0);
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -32,6 +62,36 @@ const DashboardLayout = ({ children, title }) => {
               <span className="ml-4 text-lg text-gray-600">{title}</span>
             </div>
             <div className="flex items-center space-x-4">
+              {/* Buyer-specific navigation */}
+              {user?.role === 'BUYER' && (
+                <div className="flex items-center space-x-3">
+                  <button
+                    onClick={() => navigate(ROUTES.BUYER.MARKETPLACE)}
+                    className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+                  >
+                    Marketplace
+                  </button>
+                  <button
+                    onClick={() => navigate(ROUTES.BUYER.CART)}
+                    className="relative text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium flex items-center"
+                  >
+                    <span className="mr-1">🛒</span>
+                    Cart
+                    {cartItemCount > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                        {cartItemCount}
+                      </span>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => navigate(ROUTES.BUYER.ORDERS)}
+                    className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+                  >
+                    Orders
+                  </button>
+                </div>
+              )}
+              
               <div className="flex items-center space-x-2">
                 <span className="text-sm text-gray-600">Welcome, {user?.username}</span>
                 <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getRoleColor(user?.role)}`}>
