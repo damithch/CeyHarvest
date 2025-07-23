@@ -1,4 +1,3 @@
-// Route constants to avoid typos and centralize route management
 export const ROUTES = {
   // Public routes
   HOME: '/',
@@ -8,81 +7,51 @@ export const ROUTES = {
   RESET_PASSWORD: '/reset-password',
   UNAUTHORIZED: '/unauthorized',
 
-  // General protected routes
+  // Protected routes
   DASHBOARD: '/dashboard',
   PROFILE: '/profile',
 
-  // Admin routes
+  // Role-specific routes
   ADMIN: {
     DASHBOARD: '/admin/dashboard',
-    PROFILE: '/admin/profile',
-    USERS: '/admin/users',
-    REPORTS: '/admin/reports',
+    PROFILE: '/admin/profile'
   },
-
-  // Buyer routes
   BUYER: {
     DASHBOARD: '/buyer/dashboard',
-    PROFILE: '/buyer/profile',
-    ORDERS: '/buyer/orders',
-    MARKETPLACE: '/buyer/marketplace',
-    CART: '/buyer/cart',
+    PROFILE: '/buyer/profile'
   },
-
-  // Farmer routes
   FARMER: {
     DASHBOARD: '/farmer/dashboard',
-    PROFILE: '/farmer/profile',
-    PRODUCTS: '/farmer/products',
-    ORDERS: '/farmer/orders',
+    PROFILE: '/farmer/profile'
   },
-
-  // Driver routes
   DRIVER: {
     DASHBOARD: '/driver/dashboard',
-    PROFILE: '/driver/profile',
-    DELIVERIES: '/driver/deliveries',
+    PROFILE: '/driver/profile'
   },
-
-  // Warehouse routes
   WAREHOUSE: {
     DASHBOARD: '/warehouse/dashboard',
-    PROFILE: '/warehouse/profile',
-  },
+    PROFILE: '/warehouse/profile'
+  }
 };
 
-// Helper function to get role-specific dashboard route
 export const getRoleDashboard = (role) => {
-  switch (role) {
-    case 'ADMIN':
-      return ROUTES.ADMIN.DASHBOARD;
-    case 'BUYER':
-      return ROUTES.BUYER.DASHBOARD;
-    case 'FARMER':
-      return ROUTES.FARMER.DASHBOARD;
-    case 'DRIVER':
-      return ROUTES.DRIVER.DASHBOARD;
-    case 'WAREHOUSE':
-      return ROUTES.WAREHOUSE.DASHBOARD;
-    default:
-      return ROUTES.LOGIN;
-  }
+  const dashboards = {
+    ADMIN: ROUTES.ADMIN.DASHBOARD,
+    BUYER: ROUTES.BUYER.DASHBOARD,
+    FARMER: ROUTES.FARMER.DASHBOARD,
+    DRIVER: ROUTES.DRIVER.DASHBOARD,
+    WAREHOUSE: ROUTES.WAREHOUSE.DASHBOARD
+  };
+  return dashboards[role] || ROUTES.LOGIN;
 };
 
-// Helper function to get role-specific profile route
 export const getRoleProfile = (role) => {
-  switch (role) {
-    case 'ADMIN':
-      return ROUTES.ADMIN.PROFILE;
-    case 'BUYER':
-      return ROUTES.BUYER.PROFILE;
-    case 'FARMER':
-      return ROUTES.FARMER.PROFILE;
-    case 'DRIVER':
-      return ROUTES.DRIVER.PROFILE;
-    case 'WAREHOUSE':
-      return ROUTES.WAREHOUSE.PROFILE;
-    default:
-      return ROUTES.PROFILE;
-  }
+  const profiles = {
+    ADMIN: ROUTES.ADMIN.PROFILE,
+    BUYER: ROUTES.BUYER.PROFILE,
+    FARMER: ROUTES.FARMER.PROFILE,
+    DRIVER: ROUTES.DRIVER.PROFILE,
+    WAREHOUSE: ROUTES.WAREHOUSE.PROFILE
+  };
+  return profiles[role] || ROUTES.PROFILE;
 };

@@ -1,14 +1,12 @@
-import React, { useEffect, lazy, Suspense } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import React, { lazy, Suspense } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import LoadingSpinner from './components/common/LoadingSpinner';
 import { ROUTES, getRoleDashboard } from './constants/routes';
 
-// Lazy-loaded components for better performance
-const Welcome = lazy(() => import('./components/common/Welcome'));
-const Unauthorized = lazy(() => import('./components/common/Unauthorized'));
-const NotFound = lazy(() => import('./components/common/NotFound'));
+// Lazy-loaded components
+const HomePage = lazy(() => import('./components/common/HomePage'));
 const Login = lazy(() => import('./components/auth/Login'));
 const EnhancedRegister = lazy(() => import('./components/auth/EnhancedRegister'));
 const ForgotPassword = lazy(() => import('./components/auth/ForgotPassword'));
@@ -19,42 +17,16 @@ const BuyerDashboard = lazy(() => import('./components/dashboard/BuyerDashboard'
 const DriverDashboard = lazy(() => import('./components/dashboard/DriverDashboard'));
 const WarehouseDashboard = lazy(() => import('./components/dashboard/WarehouseDashboard'));
 const ProfileSettings = lazy(() => import('./components/user/ProfileSettings'));
+const Unauthorized = lazy(() => import('./components/common/Unauthorized'));
+const NotFound = lazy(() => import('./components/common/NotFound'));
 
-const Dashboard = () => {
-  const { user } = useAuth();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (user?.role) {
-      const roleDashboard = getRoleDashboard(user.role);
-      if (roleDashboard !== ROUTES.LOGIN) {
-        navigate(roleDashboard, { replace: true });
-      }
-    }
-  }, [user, navigate]);
-
-  return (
-    <Suspense fallback={<LoadingSpinner fullPage />}>
-      {user?.role === 'ADMIN' && <AdminDashboard />}
-      {user?.role === 'FARMER' && <FarmerDashboard />}
-      {user?.role === 'BUYER' && <BuyerDashboard />}
-      {user?.role === 'DRIVER' && <DriverDashboard />}
-      {user?.role === 'WAREHOUSE' && <WarehouseDashboard />}
-      {!user && <Navigate to={ROUTES.LOGIN} replace />}
-    </Suspense>
-  );
-};
-
-const RouteConfig = () => {
+const AppRouter = () => {
   return (
     <Routes>
-      <Route path={ROUTES.HOME} element={
-        <Suspense fallback={<LoadingSpinner />}>
-          <Welcome />
-        </Suspense>
-      } />
+      {/* Root path - shows HomePage or redirects to dashboard */}
+      <Route path={ROUTES.HOME} element={<HomeOrDashboard />} />
 
-      {/* Auth Routes */}
+      {/* Auth routes */}
       <Route path={ROUTES.LOGIN} element={
         <Suspense fallback={<LoadingSpinner />}>
           <Login />
@@ -76,7 +48,31 @@ const RouteConfig = () => {
         </Suspense>
       } />
 
-      {/* Error Routes */}
+      {/* Protected routes */}
+      <Route path={ROUTES.DASHBOARD} element={
+        <ProtectedRoute>
+          <DashboardRedirect />
+        </ProtectedRoute>
+      } />
+      <Route path={ROUTES.PROFILE} element={
+        <ProtectedRoute>
+          <Suspense fallback={<LoadingSpinner />}>
+            <ProfileSettings />
+          </Suspense>
+        </ProtectedRoute>
+      } />
+
+      {/* Role-specific routes */}
+      <Route path={ROUTES.ADMIN.DASHBOARD} element={
+        <ProtectedRoute allowedRoles={['ADMIN']}>
+          <Suspense fallback={<LoadingSpinner />}>
+            <AdminDashboard />
+          </Suspense>
+        </ProtectedRoute>
+      } />
+      {/* Add similar routes for other roles... */}
+
+      {/* Error routes */}
       <Route path={ROUTES.UNAUTHORIZED} element={
         <Suspense fallback={<LoadingSpinner />}>
           <Unauthorized />
@@ -87,55 +83,24 @@ const RouteConfig = () => {
           <NotFound />
         </Suspense>
       } />
-
-      {/* Protected Routes */}
-      <Route path={ROUTES.DASHBOARD} element={
-        <ProtectedRoute>
-          <Dashboard />
-        </ProtectedRoute>
-      } />
-
-      <Route path={ROUTES.PROFILE} element={
-        <ProtectedRoute>
-          <Suspense fallback={<LoadingSpinner />}>
-            <ProfileSettings />
-          </Suspense>
-        </ProtectedRoute>
-      } />
-
-      {/* Role-specific Routes */}
-      {Object.entries(ROUTES).filter(([key]) =>
-        ['ADMIN', 'FARMER', 'BUYER', 'DRIVER', 'WAREHOUSE'].includes(key)
-      ).map(([role, routes]) => (
-        <React.Fragment key={role}>
-          <Route
-            path={routes.DASHBOARD}
-            element={
-              <ProtectedRoute allowedRoles={[role]}>
-                <Suspense fallback={<LoadingSpinner />}>
-                  {role === 'ADMIN' && <AdminDashboard />}
-                  {role === 'FARMER' && <FarmerDashboard />}
-                  {role === 'BUYER' && <BuyerDashboard />}
-                  {role === 'DRIVER' && <DriverDashboard />}
-                  {role === 'WAREHOUSE' && <WarehouseDashboard />}
-                </Suspense>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path={routes.PROFILE}
-            element={
-              <ProtectedRoute allowedRoles={[role]}>
-                <Suspense fallback={<LoadingSpinner />}>
-                  <ProfileSettings />
-                </Suspense>
-              </ProtectedRoute>
-            }
-          />
-        </React.Fragment>
-      ))}
     </Routes>
   );
+};
+
+const HomeOrDashboard = () => {
+  const { user } = useAuth();
+  return user ? (
+    <Navigate to={getRoleDashboard(user.role)} replace />
+  ) : (
+    <Suspense fallback={<LoadingSpinner />}>
+      <HomePage />
+    </Suspense>
+  );
+};
+
+const DashboardRedirect = () => {
+  const { user } = useAuth();
+  return <Navigate to={getRoleDashboard(user.role)} replace />;
 };
 
 function App() {
@@ -143,7 +108,7 @@ function App() {
     <AuthProvider>
       <Router>
         <Suspense fallback={<LoadingSpinner fullPage />}>
-          <RouteConfig />
+          <AppRouter />
         </Suspense>
       </Router>
     </AuthProvider>
