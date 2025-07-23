@@ -1,27 +1,29 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import ProtectedRoute from './components/common/ProtectedRoute';
-import Welcome from './components/common/Welcome';
-import Unauthorized from './components/common/Unauthorized';
-import NotFound from './components/common/NotFound';
-import Login from './components/auth/Login';
-import EnhancedRegister from './components/auth/EnhancedRegister';
-import ForgotPassword from './components/auth/ForgotPassword';
-import ResetPassword from './components/auth/ResetPassword';
-import AdminDashboard from './components/dashboard/AdminDashboard';
-import FarmerDashboard from './components/dashboard/FarmerDashboard';
-import BuyerDashboard from './components/dashboard/BuyerDashboard';
-import DriverDashboard from './components/dashboard/DriverDashboard';
-import WarehouseDashboard from './components/dashboard/WarehouseDashboard';
-import ProfileSettings from './components/user/ProfileSettings';
+import LoadingSpinner from './components/common/LoadingSpinner';
 import { ROUTES, getRoleDashboard } from './constants/routes';
+
+// Lazy-loaded components for better performance
+const Welcome = lazy(() => import('./components/common/Welcome'));
+const Unauthorized = lazy(() => import('./components/common/Unauthorized'));
+const NotFound = lazy(() => import('./components/common/NotFound'));
+const Login = lazy(() => import('./components/auth/Login'));
+const EnhancedRegister = lazy(() => import('./components/auth/EnhancedRegister'));
+const ForgotPassword = lazy(() => import('./components/auth/ForgotPassword'));
+const ResetPassword = lazy(() => import('./components/auth/ResetPassword'));
+const AdminDashboard = lazy(() => import('./components/dashboard/AdminDashboard'));
+const FarmerDashboard = lazy(() => import('./components/dashboard/FarmerDashboard'));
+const BuyerDashboard = lazy(() => import('./components/dashboard/BuyerDashboard'));
+const DriverDashboard = lazy(() => import('./components/dashboard/DriverDashboard'));
+const WarehouseDashboard = lazy(() => import('./components/dashboard/WarehouseDashboard'));
+const ProfileSettings = lazy(() => import('./components/user/ProfileSettings'));
 
 const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  // Auto-redirect to role-specific dashboard for better UX
   useEffect(() => {
     if (user?.role) {
       const roleDashboard = getRoleDashboard(user.role);
@@ -31,129 +33,118 @@ const Dashboard = () => {
     }
   }, [user, navigate]);
 
-  // Keep existing functionality as fallback for direct access
-  switch (user?.role) {
-    case 'ADMIN':
-      return <AdminDashboard />;
-    case 'FARMER':
-      return <FarmerDashboard />;
-    case 'BUYER':
-      return <BuyerDashboard />;
-    case 'DRIVER':
-      return <DriverDashboard />;
-    default:
-      return <Navigate to="/login" replace />;
-  }
+  return (
+    <Suspense fallback={<LoadingSpinner fullPage />}>
+      {user?.role === 'ADMIN' && <AdminDashboard />}
+      {user?.role === 'FARMER' && <FarmerDashboard />}
+      {user?.role === 'BUYER' && <BuyerDashboard />}
+      {user?.role === 'DRIVER' && <DriverDashboard />}
+      {user?.role === 'WAREHOUSE' && <WarehouseDashboard />}
+      {!user && <Navigate to={ROUTES.LOGIN} replace />}
+    </Suspense>
+  );
+};
+
+const RouteConfig = () => {
+  return (
+    <Routes>
+      <Route path={ROUTES.HOME} element={
+        <Suspense fallback={<LoadingSpinner />}>
+          <Welcome />
+        </Suspense>
+      } />
+
+      {/* Auth Routes */}
+      <Route path={ROUTES.LOGIN} element={
+        <Suspense fallback={<LoadingSpinner />}>
+          <Login />
+        </Suspense>
+      } />
+      <Route path={ROUTES.REGISTER} element={
+        <Suspense fallback={<LoadingSpinner />}>
+          <EnhancedRegister />
+        </Suspense>
+      } />
+      <Route path={ROUTES.FORGOT_PASSWORD} element={
+        <Suspense fallback={<LoadingSpinner />}>
+          <ForgotPassword />
+        </Suspense>
+      } />
+      <Route path={ROUTES.RESET_PASSWORD} element={
+        <Suspense fallback={<LoadingSpinner />}>
+          <ResetPassword />
+        </Suspense>
+      } />
+
+      {/* Error Routes */}
+      <Route path={ROUTES.UNAUTHORIZED} element={
+        <Suspense fallback={<LoadingSpinner />}>
+          <Unauthorized />
+        </Suspense>
+      } />
+      <Route path="*" element={
+        <Suspense fallback={<LoadingSpinner />}>
+          <NotFound />
+        </Suspense>
+      } />
+
+      {/* Protected Routes */}
+      <Route path={ROUTES.DASHBOARD} element={
+        <ProtectedRoute>
+          <Dashboard />
+        </ProtectedRoute>
+      } />
+
+      <Route path={ROUTES.PROFILE} element={
+        <ProtectedRoute>
+          <Suspense fallback={<LoadingSpinner />}>
+            <ProfileSettings />
+          </Suspense>
+        </ProtectedRoute>
+      } />
+
+      {/* Role-specific Routes */}
+      {Object.entries(ROUTES).filter(([key]) =>
+        ['ADMIN', 'FARMER', 'BUYER', 'DRIVER', 'WAREHOUSE'].includes(key)
+      ).map(([role, routes]) => (
+        <React.Fragment key={role}>
+          <Route
+            path={routes.DASHBOARD}
+            element={
+              <ProtectedRoute allowedRoles={[role]}>
+                <Suspense fallback={<LoadingSpinner />}>
+                  {role === 'ADMIN' && <AdminDashboard />}
+                  {role === 'FARMER' && <FarmerDashboard />}
+                  {role === 'BUYER' && <BuyerDashboard />}
+                  {role === 'DRIVER' && <DriverDashboard />}
+                  {role === 'WAREHOUSE' && <WarehouseDashboard />}
+                </Suspense>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path={routes.PROFILE}
+            element={
+              <ProtectedRoute allowedRoles={[role]}>
+                <Suspense fallback={<LoadingSpinner />}>
+                  <ProfileSettings />
+                </Suspense>
+              </ProtectedRoute>
+            }
+          />
+        </React.Fragment>
+      ))}
+    </Routes>
+  );
 };
 
 function App() {
   return (
     <AuthProvider>
       <Router>
-        <Routes>
-          <Route path={ROUTES.HOME} element={<Welcome />} />
-          <Route path={ROUTES.LOGIN} element={<Login />} />
-          <Route path={ROUTES.REGISTER} element={<EnhancedRegister />} />
-          <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPassword />} />
-          <Route path={ROUTES.RESET_PASSWORD} element={<ResetPassword />} />
-          <Route path={ROUTES.UNAUTHORIZED} element={<Unauthorized />} />
-          
-          {/* Main dashboard route - keep existing functionality */}
-          <Route 
-            path={ROUTES.DASHBOARD}
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            } 
-          />
-          
-          {/* Profile route - new addition */}
-          <Route 
-            path={ROUTES.PROFILE}
-            element={
-              <ProtectedRoute>
-                <ProfileSettings />
-              </ProtectedRoute>
-            } 
-          />
-          
-          {/* Role-specific dashboard routes - new additions */}
-          <Route 
-            path={ROUTES.ADMIN.DASHBOARD}
-            element={
-              <ProtectedRoute allowedRoles={['ADMIN']}>
-                <AdminDashboard />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path={ROUTES.BUYER.DASHBOARD}
-            element={
-              <ProtectedRoute allowedRoles={['BUYER']}>
-                <BuyerDashboard />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path={ROUTES.BUYER.PROFILE}
-            element={
-              <ProtectedRoute allowedRoles={['BUYER']}>
-                <ProfileSettings />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path={ROUTES.FARMER.DASHBOARD}
-            element={
-              <ProtectedRoute allowedRoles={['FARMER']}>
-                <FarmerDashboard />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path={ROUTES.FARMER.PROFILE}
-            element={
-              <ProtectedRoute allowedRoles={['FARMER']}>
-                <ProfileSettings />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path={ROUTES.DRIVER.DASHBOARD}
-            element={
-              <ProtectedRoute allowedRoles={['DRIVER']}>
-                <DriverDashboard />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path={ROUTES.WAREHOUSE.DASHBOARD}
-            element={
-              <ProtectedRoute allowedRoles={['WAREHOUSE']}>
-                <WarehouseDashboard />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path={ROUTES.WAREHOUSE.PROFILE}
-            element={
-              <ProtectedRoute allowedRoles={['WAREHOUSE']}>
-                <ProfileSettings />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path={ROUTES.ADMIN.PROFILE}
-            element={
-              <ProtectedRoute allowedRoles={['ADMIN']}>
-                <ProfileSettings />
-              </ProtectedRoute>
-            } 
-          />
-          
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <Suspense fallback={<LoadingSpinner fullPage />}>
+          <RouteConfig />
+        </Suspense>
       </Router>
     </AuthProvider>
   );
