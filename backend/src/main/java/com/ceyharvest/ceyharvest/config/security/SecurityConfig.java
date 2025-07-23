@@ -64,6 +64,11 @@ public class SecurityConfig {
                 // Development cart endpoints (REMOVE IN PRODUCTION)
                 .requestMatchers("/api/dev/cart/**").permitAll()
                 
+                // Test endpoints (REMOVE IN PRODUCTION)
+                .requestMatchers("/api/buyer/checkout/test").permitAll()
+                .requestMatchers("/api/buyer/checkout/test-payment-intent").permitAll()
+                .requestMatchers("/api/buyer/checkout/stripe-config").permitAll()
+                
                 // Admin endpoints - only for ADMIN role
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 

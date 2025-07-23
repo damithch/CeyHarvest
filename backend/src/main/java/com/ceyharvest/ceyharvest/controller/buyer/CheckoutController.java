@@ -38,6 +38,46 @@ public class CheckoutController {
     }
 
     /**
+     * Test endpoint to verify the controller is working
+     */
+    @GetMapping("/test")
+    public ResponseEntity<Map<String, Object>> test() {
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "ok");
+        response.put("message", "Checkout controller is working");
+        response.put("timestamp", System.currentTimeMillis());
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Test payment intent creation without authentication (for debugging)
+     */
+    @PostMapping("/test-payment-intent")
+    public ResponseEntity<Map<String, Object>> testCreatePaymentIntent(
+            @RequestBody Map<String, Object> requestBody) {
+        
+        try {
+            System.out.println("=== TEST PAYMENT INTENT DEBUG ===");
+            System.out.println("Request body: " + requestBody);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "Test endpoint working");
+            response.put("receivedData", requestBody);
+            response.put("publishableKey", paymentService.getStripePublishableKey());
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    /**
      * Create order from cart and initialize payment
      */
     @PostMapping("/create-order")
@@ -89,7 +129,17 @@ public class CheckoutController {
         try {
             String buyerEmail = authentication.getName();
             
+            // Add debug logging
+            System.out.println("=== CREATE PAYMENT INTENT DEBUG ===");
+            System.out.println("Buyer email: " + buyerEmail);
+            System.out.println("Request: " + request);
+            System.out.println("Order ID: " + (request != null ? request.getOrderId() : "null"));
+            System.out.println("Payment method: " + (request != null ? request.getPaymentMethod() : "null"));
+            
             // Validate request
+            if (request == null) {
+                throw new RuntimeException("Request body is null");
+            }
             if (request.getOrderId() == null || request.getOrderId().isEmpty()) {
                 throw new RuntimeException("Order ID is required");
             }
@@ -104,14 +154,18 @@ public class CheckoutController {
                 request.getPaymentMethod()
             );
             
+            // Add publishable key to response
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("paymentIntent", paymentIntent);
+            response.put("publishableKey", paymentService.getStripePublishableKey());
             
+            System.out.println("Payment intent created successfully");
             return ResponseEntity.ok(response);
             
         } catch (Exception e) {
             e.printStackTrace(); // Add debug logging
+            System.out.println("Error creating payment intent: " + e.getMessage());
             Map<String, Object> response = new HashMap<>();
             response.put("success", false);
             response.put("error", e.getMessage());
@@ -304,6 +358,14 @@ public class CheckoutController {
         
         public String getPaymentMethod() { return paymentMethod; }
         public void setPaymentMethod(String paymentMethod) { this.paymentMethod = paymentMethod; }
+        
+        @Override
+        public String toString() {
+            return "PaymentIntentRequest{" +
+                    "orderId='" + orderId + '\'' +
+                    ", paymentMethod='" + paymentMethod + '\'' +
+                    '}';
+        }
     }
 
     public static class ConfirmPaymentRequest {
