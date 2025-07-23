@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../layout/DashboardLayout';
 import EnhancedRegister from '../auth/EnhancedRegister';
+import { useNavigate } from 'react-router-dom';
 
 const WarehouseDashboard = () => {
   // Get warehouse info from localStorage (set after login)
@@ -8,6 +9,7 @@ const WarehouseDashboard = () => {
   const warehouse = userData && userData.role === 'WAREHOUSE' ? userData.user : null;
   const warehouseId = warehouse ? warehouse.id : null;
   const [showFarmerRegister, setShowFarmerRegister] = useState(false);
+  const navigate = useNavigate();
 
   // Farmer management state
   const [farmers, setFarmers] = useState([]);
@@ -119,6 +121,7 @@ const WarehouseDashboard = () => {
                     <th className="px-4 py-2 border-b">Email</th>
                     <th className="px-4 py-2 border-b">Phone</th>
                     <th className="px-4 py-2 border-b">Created At</th>
+                    <th className="px-4 py-2 border-b">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -134,6 +137,14 @@ const WarehouseDashboard = () => {
                         <td className="px-4 py-2 border-b">{farmer.email}</td>
                         <td className="px-4 py-2 border-b">{farmer.phoneNumber}</td>
                         <td className="px-4 py-2 border-b">{farmer.createdAt ? new Date(farmer.createdAt).toLocaleString() : ''}</td>
+                        <td className="px-4 py-2 border-b">
+                          <button
+                            className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
+                            onClick={() => navigate(`/warehouse/farmer/${farmer.id}`)}
+                          >
+                            View Details
+                          </button>
+                        </td>
                       </tr>
                     ))
                   )}

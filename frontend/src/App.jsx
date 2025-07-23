@@ -15,6 +15,7 @@ import BuyerDashboard from './components/dashboard/BuyerDashboard';
 import DriverDashboard from './components/dashboard/DriverDashboard';
 import WarehouseDashboard from './components/dashboard/WarehouseDashboard';
 import ProfileSettings from './components/user/ProfileSettings';
+import FarmerDetails from './components/dashboard/FarmerDetails';
 import { ROUTES, getRoleDashboard } from './constants/routes';
 
 const Dashboard = () => {
@@ -134,6 +135,14 @@ function App() {
                 <WarehouseDashboard />
               </ProtectedRoute>
             } 
+          />
+          <Route
+            path="/warehouse/farmer/:farmerId"
+            element={
+              <ProtectedRoute allowedRoles={['WAREHOUSE']}>
+                <FarmerDetails />
+              </ProtectedRoute>
+            }
           />
           <Route 
             path={ROUTES.WAREHOUSE.PROFILE}

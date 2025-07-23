@@ -81,4 +81,11 @@ public class WarehouseController {
 
         return ResponseEntity.ok(farmers);
     }
+
+    @GetMapping("/farmer/{farmerId}")
+    public ResponseEntity<?> getFarmerById(@PathVariable String farmerId) {
+        return farmerRepository.findById(farmerId)
+            .map(ResponseEntity::ok)
+            .orElseGet(() -> ResponseEntity.notFound().build());
+    }
 } 
