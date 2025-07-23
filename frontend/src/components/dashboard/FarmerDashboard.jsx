@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import DashboardLayout from '../layout/DashboardLayout';
 import YieldPrediction from '../prediction/YieldPrediction';
+import CropFeed from '../social/CropFeed';
 
 const FarmerDashboard = () => {
   const { user, getAuthHeaders } = useAuth();
@@ -21,6 +22,7 @@ const FarmerDashboard = () => {
       fetchOrders();
       fetchStats();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const fetchProducts = async () => {
@@ -113,6 +115,16 @@ const FarmerDashboard = () => {
               Dashboard
             </button>
             <button
+              onClick={() => setCurrentView('crop-feed')}
+              className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm ${
+                currentView === 'crop-feed'
+                  ? 'border-green-500 text-green-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              🌾 Crop Feed
+            </button>
+            <button
               onClick={() => setCurrentView('yield-prediction')}
               className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm ${
                 currentView === 'yield-prediction'
@@ -120,7 +132,7 @@ const FarmerDashboard = () => {
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
-              🌾 Yield Prediction
+              📊 Yield Prediction
             </button>
           </nav>
         </div>
@@ -157,7 +169,7 @@ const FarmerDashboard = () => {
             </div>
 
             {/* Quick Actions */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <div className="bg-white p-6 rounded-lg shadow">
                 <h3 className="text-lg font-medium text-gray-900 mb-4">Product Management</h3>
                 <div className="space-y-3">
@@ -180,13 +192,31 @@ const FarmerDashboard = () => {
                     onClick={() => setCurrentView('yield-prediction')}
                     className="w-full bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700"
                   >
-                    🌾 Predict Yield
+                    📊 Predict Yield
                   </button>
                   <button className="w-full bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700">
                     🌡️ Weather Analysis
                   </button>
                   <button className="w-full bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">
-                    📊 Crop Analytics
+                    � Crop Analytics
+                  </button>
+                </div>
+              </div>
+
+              <div className="bg-white p-6 rounded-lg shadow">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Community</h3>
+                <div className="space-y-3">
+                  <button 
+                    onClick={() => setCurrentView('crop-feed')}
+                    className="w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                  >
+                    🌾 Share Crop Updates
+                  </button>
+                  <button className="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                    🤝 Connect with Farmers
+                  </button>
+                  <button className="w-full bg-teal-600 text-white px-4 py-2 rounded hover:bg-teal-700">
+                    📚 Learn & Tips
                   </button>
                 </div>
               </div>
@@ -290,6 +320,11 @@ const FarmerDashboard = () => {
         {/* Yield Prediction View */}
         {currentView === 'yield-prediction' && (
           <YieldPrediction />
+        )}
+
+        {/* Crop Feed View */}
+        {currentView === 'crop-feed' && (
+          <CropFeed />
         )}
       </div>
     </DashboardLayout>
