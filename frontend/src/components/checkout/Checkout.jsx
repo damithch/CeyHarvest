@@ -235,6 +235,38 @@ const Checkout = () => {
     setError(`Payment failed: ${error.message}`);
   };
 
+  const handleMockPayment = async () => {
+    try {
+      setProcessing(true);
+      setError('');
+
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/buyer/checkout/confirm-payment', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          paymentIntentId: paymentIntent.paymentIntentId,
+          orderId: paymentIntent.orderId
+        })
+      });
+
+      if (response.ok) {
+        setSuccess(true);
+        setCurrentStep(3);
+      } else {
+        const errorData = await response.json();
+        setError(`Mock payment failed: ${errorData.message || 'Unknown error'}`);
+      }
+    } catch (error) {
+      setError(`Mock payment failed: ${error.message}`);
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   if (loading) {
     return (
       <DashboardLayout>
@@ -488,7 +520,7 @@ const Checkout = () => {
           </div>
         )}
 
-        {currentStep === 2 && paymentIntent && stripePromise && (
+        {currentStep === 2 && paymentIntent && (
           <div className="max-w-2xl mx-auto">
             <div className="bg-white rounded-lg shadow p-6">
               <h2 className="text-xl font-semibold mb-4">Complete Payment</h2>
@@ -496,17 +528,32 @@ const Checkout = () => {
               <div className="mb-4 p-4 bg-gray-50 rounded-md">
                 <div className="flex justify-between text-lg font-semibold">
                   <span>Total Amount:</span>
-                  <span>LKR {(paymentIntent.amount / 100).toFixed(2)}</span>
+                  <span>LKR {(paymentIntent.amount * 320).toFixed(2)}</span>
                 </div>
               </div>
 
-              <Elements stripe={stripePromise}>
-                <PaymentForm
-                  paymentIntent={paymentIntent}
-                  onPaymentSuccess={handlePaymentSuccess}
-                  onPaymentError={handlePaymentError}
-                />
-              </Elements>
+              {stripePromise ? (
+                <Elements stripe={stripePromise}>
+                  <PaymentForm
+                    paymentIntent={paymentIntent}
+                    onPaymentSuccess={handlePaymentSuccess}
+                    onPaymentError={handlePaymentError}
+                  />
+                </Elements>
+              ) : (
+                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md mb-4">
+                  <h3 className="text-lg font-semibold text-yellow-800 mb-2">Mock Payment Mode</h3>
+                  <p className="text-yellow-700 mb-4">
+                    Stripe is not configured. This is a mock payment for demonstration purposes.
+                  </p>
+                  <button
+                    onClick={() => handleMockPayment()}
+                    className="w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                  >
+                    Complete Mock Payment
+                  </button>
+                </div>
+              )}
 
               <button
                 onClick={() => setCurrentStep(1)}
