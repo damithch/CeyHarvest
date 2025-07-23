@@ -6,17 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="1f25f949-351d-48ff-bde6-1b4de3ad74bd" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/components/auth/EnhancedRegister.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/components/auth/EnhancedRegister.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/components/auth/ForgotPassword.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/components/auth/ForgotPassword.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/components/auth/Login.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/components/auth/Login.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/components/auth/ResetPassword.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/components/auth/ResetPassword.jsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/src/components/dashboard/AdminDashboard.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/components/dashboard/AdminDashboard.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/components/dashboard/BuyerDashboard.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/components/dashboard/BuyerDashboard.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/components/dashboard/DriverDashboard.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/components/dashboard/DriverDashboard.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/components/dashboard/FarmerDashboard.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/components/dashboard/FarmerDashboard.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/components/dashboard/WarehouseDashboard.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/components/dashboard/WarehouseDashboard.jsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
