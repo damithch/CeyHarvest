@@ -64,6 +64,9 @@ public class SecurityConfig {
                 // Development cart endpoints (REMOVE IN PRODUCTION)
                 .requestMatchers("/api/dev/cart/**").permitAll()
                 
+                // ML/AI endpoints - public for testing (consider securing in production)
+                .requestMatchers("/api/yield/**").permitAll()
+                
                 // Admin endpoints - only for ADMIN role
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 
