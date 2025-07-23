@@ -48,7 +48,7 @@ const YieldPrediction = () => {
     };
 
     try {
-      const response = await fetch('/api/yield/predict', {
+      const response = await fetch('/api/yield/predict-mock', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -276,17 +276,17 @@ const YieldPrediction = () => {
                   <div className="bg-white rounded-md p-4 border border-green-100">
                     <h4 className="font-medium text-gray-700 mb-2">Input Summary:</h4>
                     <div className="text-sm text-gray-600 space-y-1">
-                      <div><strong>District:</strong> {prediction.input_data.District}</div>
-                      <div><strong>Total Sown Area:</strong> {prediction.input_data.All_Schemes_Sown.toLocaleString()} hectares</div>
-                      <div><strong>Harvested Area:</strong> {prediction.input_data.Nett_Extent_Harvested.toLocaleString()} hectares</div>
+                      <div><strong>District:</strong> {prediction.input_data?.District || prediction.input_data?.district || 'N/A'}</div>
+                      <div><strong>Total Sown Area:</strong> {(prediction.input_data?.All_Schemes_Sown || prediction.input_data?.all_Schemes_Sown || 0).toLocaleString()} hectares</div>
+                      <div><strong>Harvested Area:</strong> {(prediction.input_data?.Nett_Extent_Harvested || prediction.input_data?.nett_Extent_Harvested || 0).toLocaleString()} hectares</div>
                     </div>
                   </div>
                   
-                  {typeof prediction.predicted_yield === 'number' && prediction.input_data.Nett_Extent_Harvested > 0 && (
+                  {typeof prediction.predicted_yield === 'number' && (prediction.input_data?.Nett_Extent_Harvested || prediction.input_data?.nett_Extent_Harvested || 0) > 0 && (
                     <div className="bg-white rounded-md p-4 border border-green-100">
                       <h4 className="font-medium text-gray-700 mb-2">Yield Efficiency:</h4>
                       <div className="text-sm text-gray-600">
-                        <strong>{(prediction.predicted_yield / prediction.input_data.Nett_Extent_Harvested).toFixed(2)} kg/hectare</strong>
+                        <strong>{(prediction.predicted_yield / (prediction.input_data?.Nett_Extent_Harvested || prediction.input_data?.nett_Extent_Harvested || 1)).toFixed(2)} kg/hectare</strong>
                         <div className="text-xs text-gray-500 mt-1">
                           Average yield per harvested hectare
                         </div>
