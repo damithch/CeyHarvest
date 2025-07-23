@@ -11,6 +11,9 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 
 @RestController
 @RequestMapping("/api/warehouse")
@@ -28,6 +31,10 @@ public class WarehouseController {
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir
     ) {
+        // Debug: print current user's authorities
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        System.out.println("[DEBUG] Authenticated user: " + (auth != null ? auth.getName() : "null"));
+        System.out.println("[DEBUG] Authorities: " + (auth != null ? auth.getAuthorities() : "null"));
         List<Farmer> farmers = farmerRepository.findByWarehouseIdsContaining(warehouseId);
 
         // Filter by search if provided

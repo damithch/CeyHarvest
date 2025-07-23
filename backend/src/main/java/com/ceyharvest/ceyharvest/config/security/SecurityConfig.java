@@ -70,6 +70,9 @@ public class SecurityConfig {
                 // Driver endpoints - only for DRIVER role
                 .requestMatchers("/api/driver/**").hasRole("DRIVER")
                 
+                // Warehouse endpoints - only for WAREHOUSE role
+                .requestMatchers("/api/warehouse/**").hasRole("WAREHOUSE")
+                
                 // Health check and actuator endpoints
                 .requestMatchers("/actuator/health").permitAll()
                 

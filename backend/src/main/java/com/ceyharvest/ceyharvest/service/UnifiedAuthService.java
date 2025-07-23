@@ -48,7 +48,7 @@ public class UnifiedAuthService {
                 if (!admin.isEmailVerified()) {
                     return createUnverifiedEmailResponse(admin.getEmail());
                 }
-                return createLoginResponse(admin.getEmail(), admin.getRole(), admin.getId(), admin, "ADMIN");
+                return createLoginResponse(admin.getEmail(), "ROLE_ADMIN", admin.getId(), admin, "ROLE_ADMIN");
             }
         }
 
@@ -128,7 +128,7 @@ public class UnifiedAuthService {
             Optional<Warehouse> warehouseOpt = warehouseRepository.findByPhoneNumber(identifier);
             if (warehouseOpt.isPresent() && passwordEncoder.matches(password, warehouseOpt.get().getPassword())) {
                 Warehouse warehouse = warehouseOpt.get();
-                return createLoginResponse(null, "WAREHOUSE", warehouse.getId(), warehouse, "WAREHOUSE");
+                return createLoginResponse(null, "ROLE_WAREHOUSE", warehouse.getId(), warehouse, "ROLE_WAREHOUSE");
             }
 
             return null; // No match found for phone number
