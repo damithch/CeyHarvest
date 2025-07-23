@@ -16,6 +16,9 @@ const FarmerDetails = () => {
     price: ''
   });
   const [receipt, setReceipt] = useState(null);
+  const [products, setProducts] = useState([]);
+  const [loadingProducts, setLoadingProducts] = useState(true);
+  const [productError, setProductError] = useState('');
 
   useEffect(() => {
     const fetchFarmer = async () => {
@@ -38,17 +41,73 @@ const FarmerDetails = () => {
         setLoading(false);
       }
     };
+    const fetchProducts = async () => {
+      setLoadingProducts(true);
+      setProductError('');
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`/api/warehouse/farmer/${farmerId}/products`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setProducts(data);
+        } else {
+          setProductError('Failed to fetch products');
+        }
+      } catch (err) {
+        setProductError('Network error');
+      } finally {
+        setLoadingProducts(false);
+      }
+    };
     fetchFarmer();
+    fetchProducts();
   }, [farmerId]);
 
   const handleProductChange = (e) => {
     setProduct({ ...product, [e.target.name]: e.target.value });
   };
 
-  const handleProductSubmit = (e) => {
+  const handleProductSubmit = async (e) => {
     e.preventDefault();
-    setReceipt({ ...product, farmer });
-    setShowProductForm(false);
+    setReceipt(null);
+    try {
+      const token = localStorage.getItem('token');
+      const payload = {
+        productName: product.productName,
+        location: product.location,
+        totalStock: parseInt(product.quantity, 10),
+        latestPrice: parseFloat(product.price),
+        harvestDay: product.harvestDay,
+        shelfLife: parseInt(product.shelfLife, 10)
+      };
+      const response = await fetch(`/api/warehouse/farmer/${farmerId}/products`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+      if (response.ok) {
+        const saved = await response.json();
+        setReceipt({ ...product, farmer });
+        setShowProductForm(false);
+        setProduct({ location: '', productName: '', quantity: '', harvestDay: '', shelfLife: '', price: '' });
+        // Refresh product list
+        const productsRes = await fetch(`/api/warehouse/farmer/${farmerId}/products`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (productsRes.ok) {
+          setProducts(await productsRes.json());
+        }
+      } else {
+        setProductError('Failed to add product');
+      }
+    } catch (err) {
+      setProductError('Network error');
+    }
   };
 
   const productOptions = [
@@ -72,6 +131,45 @@ const FarmerDetails = () => {
         <div><strong>Address:</strong> {farmer.address}</div>
         <div><strong>City:</strong> {farmer.city}</div>
       </div>
+      <h3 className="text-lg font-semibold mb-2 mt-6">Products Provided</h3>
+      {loadingProducts ? (
+        <div>Loading products...</div>
+      ) : productError ? (
+        <div className="text-red-600">{productError}</div>
+      ) : (
+        <div className="overflow-x-auto mb-6">
+          <table className="min-w-full bg-white border border-gray-200 rounded">
+            <thead>
+              <tr>
+                <th className="px-4 py-2 border-b">Product</th>
+                <th className="px-4 py-2 border-b">Location</th>
+                <th className="px-4 py-2 border-b">Total Stock</th>
+                <th className="px-4 py-2 border-b">Latest Price</th>
+                <th className="px-4 py-2 border-b">Harvest Day</th>
+                <th className="px-4 py-2 border-b">Shelf Life</th>
+              </tr>
+            </thead>
+            <tbody>
+              {products.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="text-center py-4 text-gray-500">No products found for this farmer.</td>
+                </tr>
+              ) : (
+                products.map(prod => (
+                  <tr key={prod.id}>
+                    <td className="px-4 py-2 border-b">{prod.productName}</td>
+                    <td className="px-4 py-2 border-b">{prod.location}</td>
+                    <td className="px-4 py-2 border-b">{prod.totalStock}</td>
+                    <td className="px-4 py-2 border-b">{prod.latestPrice}</td>
+                    <td className="px-4 py-2 border-b">{prod.harvestDay}</td>
+                    <td className="px-4 py-2 border-b">{prod.shelfLife}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
       {!receipt && (
         <button
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 mb-4"

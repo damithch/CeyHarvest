@@ -19,15 +19,15 @@ public class Farmer {
     private String id;
     private String username;
     private String password;
-    
+
     @Indexed(unique = true)
     private String email;
-    
+
     private String role = "FARMER";
-    
+
     @Indexed(unique = true, sparse = true)
     private String phoneNumber;
-    
+
     private String firstName;
     private String lastName;
     private String address;
