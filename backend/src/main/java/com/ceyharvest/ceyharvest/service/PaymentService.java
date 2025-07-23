@@ -30,6 +30,7 @@ public class PaymentService {
 
     @Value("${stripe.secret.key:sk_test_default}")
     private String stripeSecretKey;
+    
 
     @Value("${stripe.publishable.key:pk_test_default}")
     private String stripePublishableKey;
