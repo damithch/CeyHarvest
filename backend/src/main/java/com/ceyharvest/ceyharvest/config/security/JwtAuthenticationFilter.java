@@ -99,6 +99,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                path.startsWith("/api/driver/register") ||
                path.startsWith("/api/driver/login") ||
                path.startsWith("/api/auth/") || // Password reset endpoints
-               path.startsWith("/api/admin/reset"); // Temporary for password reset
+               path.startsWith("/api/admin/reset") || // Temporary for password reset
+               path.startsWith("/api/yield/"); // ML/AI endpoints - public for testing
     }
 }

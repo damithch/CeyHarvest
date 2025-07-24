@@ -1,3 +1,4 @@
+// ResetPassword.jsx
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 
@@ -53,7 +54,7 @@ const ResetPassword = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:8080/api/auth/reset-password', {
+      const response = await fetch('/api/auth/reset-password', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

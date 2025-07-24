@@ -16,8 +16,8 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
-@Component
-@Order(1) // Run before AdminInitializer
+// @Component - Temporarily disabled to allow app startup without DB authentication
+// @Order(1) // Run before AdminInitializer
 public class PasswordMigration implements CommandLineRunner {
 
     @Autowired

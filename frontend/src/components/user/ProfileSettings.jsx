@@ -70,7 +70,7 @@ const ProfileSettings = ({ onBack }) => {
         throw new Error('No authentication token found');
       }
 
-      const response = await fetch('http://localhost:8080/api/profile/update', {
+      const response = await fetch('/api/profile/update', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -121,7 +121,7 @@ const ProfileSettings = ({ onBack }) => {
         throw new Error('No authentication token found');
       }
 
-      const response = await fetch('http://localhost:8080/api/profile/change-password', {
+      const response = await fetch('/api/profile/change-password', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

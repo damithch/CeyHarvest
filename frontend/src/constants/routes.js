@@ -27,6 +27,7 @@ export const ROUTES = {
     ORDERS: '/buyer/orders',
     MARKETPLACE: '/buyer/marketplace',
     CART: '/buyer/cart',
+    CHECKOUT: '/buyer/checkout',
   },
 
   // Farmer routes
@@ -35,6 +36,8 @@ export const ROUTES = {
     PROFILE: '/farmer/profile',
     PRODUCTS: '/farmer/products',
     ORDERS: '/farmer/orders',
+    CROP_FEED: '/farmer/crop-feed',
+    EXPIRED_PRODUCTS: '/farmer/expired-products',
   },
 
   // Driver routes

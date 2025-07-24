@@ -1,0 +1,9 @@
+# Temporary Demo Configuration for Testing
+# IMPORTANT: These are NOT real Stripe keys - they're for demonstration only
+# You MUST replace these with your actual Stripe test keys
+
+# Demo keys (will not process real payments)
+stripe.publishable.key=pk_test_demo_key_for_frontend_display
+stripe.secret.key=sk_test_demo_key_for_backend_testing
+
+# When you get your real Stripe keys, replace the values above
