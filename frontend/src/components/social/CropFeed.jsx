@@ -2,74 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import '../../styles/CropFeed.css';
 
-// Mock data for demonstration
-const mockPosts = [
-  {
-    id: 1,
-    farmer: {
-      id: 1,
-      name: "Kamal Perera",
-      location: "Anuradhapura"
-    },
-    description: "My rice crop is looking great this season! The new fertilizer technique is working well. 🌾",
-    image: "https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80",
-    createdAt: "2024-01-15T10:30:00Z",
-    likes: 15,
-    comments: [
-      {
-        id: 1,
-        user: "Sunil Fernando",
-        text: "Looking excellent! What fertilizer are you using?",
-        createdAt: "2024-01-15T11:00:00Z"
-      },
-      {
-        id: 2,
-        user: "Nimal Silva",
-        text: "Great work! Hope you get a good harvest",
-        createdAt: "2024-01-15T12:00:00Z"
-      }
-    ],
-    liked: false
-  },
-  {
-    id: 2,
-    farmer: {
-      id: 2,
-      name: "Sita Kumari",
-      location: "Kurunegala"
-    },
-    description: "Harvested my tomatoes today! Organic farming really pays off. 🍅",
-    image: "https://images.unsplash.com/photo-1592841200221-21661d707119?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80",
-    createdAt: "2024-01-14T08:45:00Z",
-    likes: 23,
-    comments: [
-      {
-        id: 3,
-        user: "Priya Dissanayake",
-        text: "Beautiful tomatoes! Do you sell them locally?",
-        createdAt: "2024-01-14T09:15:00Z"
-      }
-    ],
-    liked: true
-  },
-  {
-    id: 3,
-    farmer: {
-      id: 3,
-      name: "Ranjan Mendis",
-      location: "Polonnaruwa"
-    },
-    description: "New irrigation system installed! Technology is transforming agriculture. 💧",
-    image: "https://images.unsplash.com/photo-1625246333195-78d9c38ad449?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80",
-    createdAt: "2024-01-13T16:20:00Z",
-    likes: 8,
-    comments: [],
-    liked: false
-  }
-];
-
 const CropFeed = () => {
-  const { user } = useAuth();
+  const { user, getAuthHeaders } = useAuth();
   const [posts, setPosts] = useState([]);
   const [newPost, setNewPost] = useState({
     description: '',
@@ -77,13 +11,79 @@ const CropFeed = () => {
     imagePreview: null
   });
   const [isCreatingPost, setIsCreatingPost] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // API base URL - will use relative paths for proxy
+  const API_BASE = '';
+
+  // Convert file to base64
+  const convertToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = error => reject(error);
+    });
+  };
+
+  // Fetch community feed
+  const fetchCommunityFeed = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await fetch(`${API_BASE}/api/farmer/${user.id}/community/feed`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          ...getAuthHeaders()
+        }
+      });
+
+      if (response.ok) {
+        const feedData = await response.json();
+        // Transform backend data to frontend format
+        const transformedPosts = feedData.map(post => ({
+          id: post.id,
+          farmer: {
+            id: post.farmerId,
+            name: post.farmerName,
+            location: post.farmerLocation
+          },
+          description: post.description,
+          image: post.imageBase64,
+          createdAt: post.createdAt,
+          likes: post.likes,
+          comments: post.comments.map(comment => ({
+            id: comment.id,
+            user: comment.userName,
+            text: comment.text,
+            createdAt: comment.createdAt
+          })),
+          liked: post.likedByUserIds?.includes(user.id) || false,
+          likedByUserIds: post.likedByUserIds || []
+        }));
+        setPosts(transformedPosts);
+      } else {
+        throw new Error('Failed to fetch community feed');
+      }
+    } catch (error) {
+      console.error('Error fetching community feed:', error);
+      setError('Failed to load community feed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    // Initialize with mock data
-    setPosts(mockPosts);
-  }, []);
+    if (user && user.id) {
+      fetchCommunityFeed();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
-  const handleImageChange = (e) => {
+  const handleImageChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
       setNewPost({
@@ -94,64 +94,140 @@ const CropFeed = () => {
     }
   };
 
-  const handleCreatePost = () => {
+  const handleCreatePost = async () => {
     if (!newPost.description.trim()) return;
 
-    const post = {
-      id: posts.length + 1,
-      farmer: {
-        id: user.id,
-        name: user.name || "Current User",
-        location: user.location || "Sri Lanka"
-      },
-      description: newPost.description,
-      image: newPost.imagePreview || "https://images.unsplash.com/photo-1500382017468-9049fed747ef?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
-      createdAt: new Date().toISOString(),
-      likes: 0,
-      comments: [],
-      liked: false
-    };
-
-    setPosts([post, ...posts]);
-    setNewPost({
-      description: '',
-      image: null,
-      imagePreview: null
-    });
-    setIsCreatingPost(false);
-  };
-
-  const handleLike = (postId) => {
-    setPosts(posts.map(post => {
-      if (post.id === postId) {
-        return {
-          ...post,
-          liked: !post.liked,
-          likes: post.liked ? post.likes - 1 : post.likes + 1
-        };
+    try {
+      let imageBase64 = null;
+      if (newPost.image) {
+        imageBase64 = await convertToBase64(newPost.image);
       }
-      return post;
-    }));
+
+      const response = await fetch(`${API_BASE}/api/farmer/${user.id}/community/posts`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          ...getAuthHeaders()
+        },
+        body: JSON.stringify({
+          description: newPost.description,
+          imageBase64: imageBase64
+        })
+      });
+
+      if (response.ok) {
+        const createdPost = await response.json();
+        
+        // Transform to frontend format and add to posts
+        const transformedPost = {
+          id: createdPost.id,
+          farmer: {
+            id: createdPost.farmerId,
+            name: createdPost.farmerName,
+            location: createdPost.farmerLocation
+          },
+          description: createdPost.description,
+          image: createdPost.imageBase64,
+          createdAt: createdPost.createdAt,
+          likes: createdPost.likes,
+          comments: [],
+          liked: false,
+          likedByUserIds: []
+        };
+
+        setPosts([transformedPost, ...posts]);
+        setNewPost({
+          description: '',
+          image: null,
+          imagePreview: null
+        });
+        setIsCreatingPost(false);
+      } else {
+        throw new Error('Failed to create post');
+      }
+    } catch (error) {
+      console.error('Error creating post:', error);
+      alert('Failed to create post. Please try again.');
+    }
   };
 
-  const handleComment = (postId, commentText) => {
+  const handleLike = async (postId) => {
+    try {
+      const response = await fetch(`${API_BASE}/api/farmer/${user.id}/community/posts/${postId}/like`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          ...getAuthHeaders()
+        }
+      });
+
+      if (response.ok) {
+        const updatedPost = await response.json();
+        
+        // Update the post in the local state
+        setPosts(posts.map(post => {
+          if (post.id === postId) {
+            return {
+              ...post,
+              likes: updatedPost.likes,
+              liked: updatedPost.likedByUserIds?.includes(user.id) || false,
+              likedByUserIds: updatedPost.likedByUserIds || []
+            };
+          }
+          return post;
+        }));
+      } else {
+        throw new Error('Failed to toggle like');
+      }
+    } catch (error) {
+      console.error('Error toggling like:', error);
+      alert('Failed to update like. Please try again.');
+    }
+  };
+
+  const handleComment = async (postId, commentText) => {
     if (!commentText.trim()) return;
 
-    setPosts(posts.map(post => {
-      if (post.id === postId) {
-        const newComment = {
-          id: Date.now(),
-          user: user.name || "Current User",
-          text: commentText,
-          createdAt: new Date().toISOString()
-        };
-        return {
-          ...post,
-          comments: [...post.comments, newComment]
-        };
+    try {
+      const response = await fetch(`${API_BASE}/api/farmer/${user.id}/community/posts/${postId}/comments`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          ...getAuthHeaders()
+        },
+        body: JSON.stringify({
+          text: commentText
+        })
+      });
+
+      if (response.ok) {
+        const updatedPost = await response.json();
+        
+        // Update the post in the local state
+        setPosts(posts.map(post => {
+          if (post.id === postId) {
+            return {
+              ...post,
+              comments: updatedPost.comments.map(comment => ({
+                id: comment.id,
+                user: comment.userName,
+                text: comment.text,
+                createdAt: comment.createdAt
+              }))
+            };
+          }
+          return post;
+        }));
+      } else {
+        throw new Error('Failed to add comment');
       }
-      return post;
-    }));
+    } catch (error) {
+      console.error('Error adding comment:', error);
+      alert('Failed to add comment. Please try again.');
+    }
   };
 
   const formatDate = (dateString) => {
@@ -286,6 +362,36 @@ const CropFeed = () => {
     );
   };
 
+  if (loading) {
+    return (
+      <div className="max-w-2xl mx-auto py-6 crop-feed-container">
+        <div className="text-center py-12">
+          <div className="text-6xl mb-4">🌾</div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Loading community feed...</h3>
+          <p className="text-gray-600">Please wait while we fetch the latest updates</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="max-w-2xl mx-auto py-6 crop-feed-container">
+        <div className="text-center py-12">
+          <div className="text-6xl mb-4">⚠️</div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Error loading feed</h3>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button 
+            onClick={fetchCommunityFeed}
+            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-2xl mx-auto py-6 crop-feed-container">
       <div className="mb-6">
@@ -378,7 +484,7 @@ const CropFeed = () => {
         ))}
       </div>
 
-      {posts.length === 0 && (
+      {posts.length === 0 && !loading && (
         <div className="text-center py-12">
           <div className="text-6xl mb-4">🌱</div>
           <h3 className="text-lg font-medium text-gray-900 mb-2">No posts yet</h3>
