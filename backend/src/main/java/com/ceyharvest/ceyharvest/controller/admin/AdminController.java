@@ -423,6 +423,12 @@ public class AdminController {
         }
     }
 
+    // List all warehouses
+    @GetMapping("/warehouses")
+    public ResponseEntity<?> getAllWarehouses() {
+        return ResponseEntity.ok(warehouseRepository.findAll());
+    }
+
     // Helper methods to convert entities to detailed maps
     private Map<String, Object> convertFarmerToDetailedMap(Farmer farmer) {
         Map<String, Object> map = new HashMap<>();

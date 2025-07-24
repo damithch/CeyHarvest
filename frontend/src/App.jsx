@@ -15,9 +15,10 @@ import BuyerDashboard from './components/dashboard/BuyerDashboard';
 import DriverDashboard from './components/dashboard/DriverDashboard';
 import WarehouseDashboard from './components/dashboard/WarehouseDashboard';
 import ProfileSettings from './components/user/ProfileSettings';
+import FarmerDetails from './components/dashboard/FarmerDetails';
+import Marketplace from './components/marketplace/Marketplace';
 import Cart from './components/cart/Cart';
 import Checkout from './components/checkout/Checkout';
-import Marketplace from './components/marketplace/Marketplace';
 import Orders from './components/orders/Orders';
 import CropFeed from './components/social/CropFeed';
 import ExpiredProductNotifications from './components/products/ExpiredProductNotifications';
@@ -189,6 +190,14 @@ function App() {
               </ProtectedRoute>
             } 
           />
+          <Route
+            path="/warehouse/farmer/:farmerId"
+            element={
+              <ProtectedRoute allowedRoles={['WAREHOUSE']}>
+                <FarmerDetails />
+              </ProtectedRoute>
+            }
+          />
           <Route 
             path={ROUTES.WAREHOUSE.PROFILE}
             element={
@@ -206,6 +215,9 @@ function App() {
             } 
           />
           
+          {/* Public Marketplace route for everyone */}
+          <Route path="/marketplace" element={<Marketplace />} />
+
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Router>

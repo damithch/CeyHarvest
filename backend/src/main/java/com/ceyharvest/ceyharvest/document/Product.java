@@ -1,23 +1,31 @@
 package com.ceyharvest.ceyharvest.document;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
 
-@Document(collection = "products")
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
+@Document(collection = "products")
 public class Product {
     @Id
     private String id;
     private String farmerId;
-    private String name;
-    private String description;
-    private double price;
-    private int quantity;
-    private String category;
-    private String imageBase64;
+    private String productName;
+    private String location;
+    private int totalStock;
+    private double latestPrice;
+    private LocalDate harvestDay;
+    private int shelfLife;
+    private LocalDateTime createdAt = LocalDateTime.now();
+    private List<PriceHistory> priceHistory;
+
+    @Data
+    public static class PriceHistory {
+        private double price;
+        private int stockAdded;
+        private LocalDateTime timestamp;
+    }
 }
