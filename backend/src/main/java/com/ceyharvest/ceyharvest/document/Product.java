@@ -1,6 +1,8 @@
 package com.ceyharvest.ceyharvest.document;
 
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import java.time.LocalDate;
@@ -21,6 +23,19 @@ public class Product {
     private int shelfLife;
     private LocalDateTime createdAt = LocalDateTime.now();
     private List<PriceHistory> priceHistory;
+
+    @Getter @Setter
+    private String name; // for getName()/setName()
+    @Getter @Setter
+    private String description; // for getDescription()/setDescription()
+    @Getter @Setter
+    private double price; // for getPrice()/setPrice()
+    @Getter @Setter
+    private int quantity; // for getQuantity()/setQuantity()
+    @Getter @Setter
+    private String category; // for getCategory()/setCategory()
+    @Getter @Setter
+    private String imageBase64; // for getImageBase64()/setImageBase64()
 
     @Data
     public static class PriceHistory {
