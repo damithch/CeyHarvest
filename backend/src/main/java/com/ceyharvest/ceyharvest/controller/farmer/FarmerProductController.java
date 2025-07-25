@@ -23,23 +23,19 @@ public class FarmerProductController {
     public ResponseEntity<?> addProduct(
             @PathVariable String farmerId,
             @RequestParam String name,
-            @RequestParam String description,
+            @RequestParam(required = false) String description, // Not used
             @RequestParam double price,
             @RequestParam int quantity,
-            @RequestParam String category,
-            @RequestParam("image") MultipartFile image
+            @RequestParam(required = false) String category, // Not used
+            @RequestParam(value = "image", required = false) MultipartFile image // Not used
     ) throws IOException {
         Product product = new Product();
         product.setId(null);
         product.setFarmerId(farmerId);
-        product.setName(name);
-        product.setDescription(description);
-        product.setPrice(price);
-        product.setQuantity(quantity);
-        product.setCategory(category);
-        if (image != null && !image.isEmpty()) {
-            product.setImageBase64(Base64.getEncoder().encodeToString(image.getBytes()));
-        }
+        product.setProductName(name);
+        product.setLatestPrice(price);
+        product.setTotalStock(quantity);
+        // description, category, imageBase64 are not present in Product class
         Product saved = productRepository.save(product);
         return ResponseEntity.ok(saved);
     }
@@ -50,25 +46,21 @@ public class FarmerProductController {
             @PathVariable String farmerId,
             @PathVariable String productId,
             @RequestParam String name,
-            @RequestParam String description,
+            @RequestParam(required = false) String description, // Not used
             @RequestParam double price,
             @RequestParam int quantity,
-            @RequestParam String category,
-            @RequestParam(value = "image", required = false) MultipartFile image
+            @RequestParam(required = false) String category, // Not used
+            @RequestParam(value = "image", required = false) MultipartFile image // Not used
     ) throws IOException {
         Optional<Product> existing = productRepository.findById(productId);
         if (existing.isEmpty() || !existing.get().getFarmerId().equals(farmerId)) {
             return ResponseEntity.notFound().build();
         }
         Product toUpdate = existing.get();
-        toUpdate.setName(name);
-        toUpdate.setDescription(description);
-        toUpdate.setPrice(price);
-        toUpdate.setQuantity(quantity);
-        toUpdate.setCategory(category);
-        if (image != null && !image.isEmpty()) {
-            toUpdate.setImageBase64(Base64.getEncoder().encodeToString(image.getBytes()));
-        }
+        toUpdate.setProductName(name);
+        toUpdate.setLatestPrice(price);
+        toUpdate.setTotalStock(quantity);
+        // description, category, imageBase64 are not present in Product class
         Product updated = productRepository.save(toUpdate);
         return ResponseEntity.ok(updated);
     }
