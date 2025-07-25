@@ -31,7 +31,6 @@ public class PaymentService {
     @Value("${stripe.secret.key:sk_test_default}")
     private String stripeSecretKey;
     
-
     @Value("${stripe.publishable.key:pk_test_default}")
     private String stripePublishableKey;
 
@@ -88,10 +87,10 @@ public class PaymentService {
             // Convert amount to cents (Stripe expects amounts in cents)
             long amountInCents = amount.multiply(BigDecimal.valueOf(100)).longValue();
 
+            // OPTION 1: automatic payment methods (preferred)
             PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
                     .setAmount(amountInCents)
                     .setCurrency(currency)
-                    .addPaymentMethodType("card")
                     .putMetadata("buyer_id", buyerId)
                     .setAutomaticPaymentMethods(
                             PaymentIntentCreateParams.AutomaticPaymentMethods.builder()
@@ -258,7 +257,6 @@ public class PaymentService {
             String currency = "usd"; // Use USD for Stripe compatibility, convert LKR to USD
             
             // For demo purposes, convert LKR to USD (1 USD = ~320 LKR)
-            // Since we're dealing with LKR amounts, convert to USD
             amount = amount.divide(BigDecimal.valueOf(320), 2, java.math.RoundingMode.HALF_UP);
             
             // Ensure minimum amount for Stripe (0.50 USD)
