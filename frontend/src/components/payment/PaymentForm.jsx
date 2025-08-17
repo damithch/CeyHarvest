@@ -1,89 +1,79 @@
 import React, { useState } from 'react';
 import { useStripe, useElements, CardElement } from '@stripe/react-stripe-js';
 
-const PaymentForm = ({ paymentIntent, onPaymentSuccess, onPaymentError }) => {
-  const stripe = useStripe();
+const PaymentForm = ({
+  paymentIntent,
+  totalLkr,
+  onPaymentSuccess,
+  onPaymentError
+}) => {
+  const stripe   = useStripe();
   const elements = useElements();
-  const [processing, setProcessing] = useState(false);
-  const [error, setError] = useState('');
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
+  const [cardError, setCardError]       = useState('');
+  const [cardComplete, setCardComplete] = useState(false);
+  const [processing, setProcessing]     = useState(false);
 
-    if (!stripe || !elements) {
+  const handleCardChange = e => {
+    setCardError('');
+    if (e.error) setCardError(e.error.message);
+    setCardComplete(e.complete);
+  };
+
+  const handleSubmit = async ev => {
+    ev.preventDefault();
+    if (!stripe || !elements || !cardComplete) {
+      if (!cardComplete) setCardError('Please enter your full card details.');
       return;
     }
 
     setProcessing(true);
-    setError('');
+    setCardError('');
 
     try {
-      const cardElement = elements.getElement(CardElement);
+      const cardElement  = elements.getElement(CardElement);
+      const clientSecret = paymentIntent.clientSecret;
 
-      const { error: confirmError, paymentIntent: confirmedPaymentIntent } = await stripe.confirmCardPayment(
-        paymentIntent.client_secret,
-        {
-          payment_method: {
-            card: cardElement,
-          }
-        }
-      );
+      const { error: confirmError, paymentIntent: pi } =
+        await stripe.confirmCardPayment(clientSecret, {
+          payment_method: { card: cardElement }
+        });
 
       if (confirmError) {
-        setError(confirmError.message);
-        onPaymentError && onPaymentError(confirmError);
+        setCardError(confirmError.message);
+        onPaymentError?.(confirmError);
       } else {
-        // Payment succeeded
-        onPaymentSuccess && onPaymentSuccess(confirmedPaymentIntent);
+        onPaymentSuccess?.(pi);
       }
     } catch (err) {
-      setError('An unexpected error occurred.');
-      onPaymentError && onPaymentError(err);
+      setCardError('An unexpected error occurred.');
+      onPaymentError?.(err);
     } finally {
       setProcessing(false);
     }
   };
 
-  const cardElementOptions = {
-    style: {
-      base: {
-        fontSize: '16px',
-        color: '#424770',
-        '::placeholder': {
-          color: '#aab7c4',
-        },
-      },
-      invalid: {
-        color: '#9e2146',
-      },
-    },
-  };
-
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="p-4 border border-gray-300 rounded-md">
-        <CardElement options={cardElementOptions} />
+        <CardElement
+          options={{ style: { base: { fontSize: '16px' } } }}
+          onChange={handleCardChange}
+        />
       </div>
 
-      {error && (
-        <div className="text-red-600 text-sm">
-          {error}
-        </div>
+      {cardError && (
+        <div className="text-red-600 text-sm">{cardError}</div>
       )}
 
       <button
         type="submit"
-        disabled={!stripe || processing}
-        className="w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        disabled={!stripe || !cardComplete || processing}
+        className="w-full px-6 py-3 bg-green-600 text-white rounded-lg disabled:opacity-50"
       >
-        {processing ? (
-          <div className="flex items-center justify-center">
-            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-            Processing Payment...
-          </div>
-        ) : (
-          `Pay LKR ${(paymentIntent.amount / 100).toFixed(2)}`
-        )}
+        {processing
+          ? 'Processing…'
+          : `Pay LKR ${totalLkr.toFixed(2)}`}
       </button>
     </form>
   );
