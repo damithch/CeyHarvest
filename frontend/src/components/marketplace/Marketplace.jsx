@@ -146,7 +146,7 @@ const Marketplace = () => {
                   
                   <div className="flex items-center justify-between">
                     <span className="text-xl font-bold text-green-600">
-                      LKR {product.price.toFixed(2)}
+                      Rs. {typeof product.latestPrice === 'number' ? product.latestPrice.toFixed(2) : product.latestPrice ? Number(product.latestPrice).toFixed(2) : 'N/A'}
                     </span>
                     
                     <button
