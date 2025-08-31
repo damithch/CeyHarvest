@@ -225,30 +225,30 @@ public class WarehouseController {
         return ResponseEntity.ok(result);
     }
 
-    // Marketplace endpoint: get all products with warehouse info, filter by district if provided
+    // Marketplace endpoint: get all products with basic info
     @GetMapping("/marketplace/products")
     public ResponseEntity<?> getMarketplaceProducts(@RequestParam(required = false) String district) {
-        List<Warehouse> warehouses = (district == null || district.isEmpty())
-            ? warehouseRepository.findAll()
-            : warehouseRepository.findAll().stream().filter(w -> district.equalsIgnoreCase(w.getDistrict())).toList();
+        List<Product> allProducts = productRepository.findAll();
         List<Map<String, Object>> result = new java.util.ArrayList<>();
-        for (Warehouse wh : warehouses) {
-            List<Product> products = productRepository.findAll().stream()
-                .filter(p -> wh.getId().equals(p.getFarmerId()) || (p.getFarmerId() != null && wh.getId().equals(p.getFarmerId()))) // fallback for farmerId/warehouseId confusion
-                .toList();
-            for (Product prod : products) {
-                Map<String, Object> map = new java.util.HashMap<>();
-                map.put("productId", prod.getId());
-                map.put("productName", prod.getProductName());
-                map.put("latestPrice", prod.getLatestPrice());
-                map.put("totalStock", prod.getTotalStock());
-                map.put("warehouseId", wh.getId());
-                map.put("warehouseManager", wh.getManagerName());
-                map.put("district", wh.getDistrict());
-                map.put("address", wh.getAddress());
-                result.add(map);
+        
+        for (Product prod : allProducts) {
+            // Skip products with no name or zero stock
+            if (prod.getProductName() == null || prod.getProductName().isEmpty() || prod.getTotalStock() <= 0) {
+                continue;
             }
+            
+            Map<String, Object> map = new java.util.HashMap<>();
+            map.put("productId", prod.getId());
+            map.put("productName", prod.getProductName());
+            map.put("latestPrice", prod.getLatestPrice());
+            map.put("totalStock", prod.getTotalStock());
+            map.put("farmerId", prod.getFarmerId());
+            map.put("location", prod.getLocation());
+            map.put("harvestDay", prod.getHarvestDay());
+            map.put("shelfLife", prod.getShelfLife());
+            result.add(map);
         }
+        
         return ResponseEntity.ok(result);
     }
 } 

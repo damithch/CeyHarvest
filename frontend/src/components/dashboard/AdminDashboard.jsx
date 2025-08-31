@@ -43,6 +43,7 @@ const AdminDashboard = () => {
   const [formError, setFormError] = useState('');
   const [warehouses, setWarehouses] = useState([]);
   const [warehouseProductSummaries, setWarehouseProductSummaries] = useState({});
+  const [globalProductSummary, setGlobalProductSummary] = useState([]);
   const [selectedWarehouseProduct, setSelectedWarehouseProduct] = useState(null);
   const [farmersForProduct, setFarmersForProduct] = useState([]);
   const [showFarmersModal, setShowFarmersModal] = useState(false);
@@ -94,6 +95,7 @@ const AdminDashboard = () => {
     fetchStats();
     fetchRecentActivity();
     fetchWarehouses();
+    fetchGlobalProductSummary();
   }, []);
 
   const handleWarehouseInputChange = (e) => {
@@ -165,6 +167,18 @@ const AdminDashboard = () => {
       }
     } catch (error) {
       console.error('Error fetching recent activity:', error);
+    }
+  };
+
+  const fetchGlobalProductSummary = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/admin/products/summary', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) setGlobalProductSummary(await res.json());
+    } catch (e) {
+      console.error('Failed to fetch global product summary', e);
     }
   };
 
@@ -264,6 +278,8 @@ const AdminDashboard = () => {
                 trend="+2%"
               />
             </div>
+
+            {/* */}
 
             {/* Quick Actions */}
             <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 p-8">
@@ -544,6 +560,61 @@ const AdminDashboard = () => {
                     </div>
                   )}
                 </div>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'products':
+        return (
+          <div className="space-y-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
+                  Products Overview
+                </h1>
+                <p className="text-gray-600 mt-2">Total quantities across all warehouses</p>
+              </div>
+              <button
+                onClick={fetchGlobalProductSummary}
+                className="px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+              >
+                Refresh
+              </button>
+            </div>
+
+            <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 p-8">
+              <div className="overflow-x-auto">
+                <table className="min-w-full bg-white rounded-xl overflow-hidden">
+                  <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
+                    <tr>
+                      <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">Product</th>
+                      <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">Total Stock</th>
+                      <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">Latest Price</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {globalProductSummary.length === 0 ? (
+                      <tr>
+                        <td colSpan={3} className="px-6 py-8 text-center text-gray-500">No products found</td>
+                      </tr>
+                    ) : (
+                      globalProductSummary.map((p) => (
+                        <tr key={p.productName} className="hover:bg-amber-50">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-semibold text-gray-900">{p.productName}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="px-3 py-1 inline-flex text-sm font-semibold rounded-full bg-emerald-100 text-emerald-800">{p.totalStock}</span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="text-sm font-bold text-gray-900">Rs. {p.latestPrice}</span>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>

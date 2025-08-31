@@ -25,18 +25,23 @@ import ExpiredProductNotifications from './components/products/ExpiredProductNot
 import { ROUTES, getRoleDashboard } from './constants/routes';
 
 const Dashboard = () => {
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   // Auto-redirect to role-specific dashboard for better UX
   useEffect(() => {
-    if (user?.role) {
+    if (user?.role && isAuthenticated) {
       const roleDashboard = getRoleDashboard(user.role);
       if (roleDashboard !== ROUTES.LOGIN) {
         navigate(roleDashboard, { replace: true });
       }
     }
-  }, [user, navigate]);
+  }, [user, navigate, isAuthenticated]);
+
+  // If not authenticated, redirect to login
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
 
   // Keep existing functionality as fallback for direct access
   switch (user?.role) {

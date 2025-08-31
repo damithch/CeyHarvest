@@ -1,5 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
+import AddToCartButton from './AddToCartButton';
 
 const categories = [
   { name: 'Vegetables', icon: '🥦', count: 52 },
@@ -22,7 +24,10 @@ const products = [
   { id: 4, name: 'Fresh Broccoli', price: 10, oldPrice: 12, image: 'data:image/jpeg;base64,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', rating: 4.7, category: 'Vegetables', discount: 15 },
 ];
 
-const Welcome = () => (
+const Welcome = () => {
+  const { logout, isAuthenticated } = useAuth();
+  
+  return (
   <div className="bg-gray-50 min-h-screen">
     {/* Header */}
     <header className="bg-green-700 text-white px-6 py-4 flex items-center justify-between">
@@ -37,7 +42,16 @@ const Welcome = () => (
         <Link to="/contact" className="hover:underline">Contact</Link>
       </nav>
       <div>
-        <Link to="/login" className="bg-white text-green-700 px-4 py-1 rounded font-bold hover:bg-green-50">Sign In</Link>
+        {isAuthenticated ? (
+          <button 
+            onClick={logout} 
+            className="bg-white text-green-700 px-4 py-1 rounded font-bold hover:bg-green-50"
+          >
+            Logout
+          </button>
+        ) : (
+          <Link to="/login" className="bg-white text-green-700 px-4 py-1 rounded font-bold hover:bg-green-50">Sign In</Link>
+        )}
       </div>
     </header>
 
@@ -103,10 +117,12 @@ const Welcome = () => (
               {Array.from({ length: Math.round(prod.rating) }).map((_, i) => <span key={i}>★</span>)}
               <span className="text-xs text-gray-500 ml-1">{prod.rating}</span>
             </div>
-            <button className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 w-full flex items-center justify-center transition">
-              <span className="material-icons mr-2">add_shopping_cart</span>
-              Add
-            </button>
+            <AddToCartButton 
+              productId={String(prod.id)}
+              productName={prod.name}
+              size="small"
+              className="w-full"
+            />
           </div>
         ))}
       </div>
@@ -126,6 +142,7 @@ const Welcome = () => (
       </div>
     </footer>
   </div>
-);
+  );
+};
 
 export default Welcome;
