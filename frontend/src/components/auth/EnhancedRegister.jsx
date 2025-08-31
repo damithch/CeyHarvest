@@ -121,7 +121,6 @@ const EnhancedRegister = ({ warehouseId }) => {
 
   const sendVerificationCode = async () => {
     try {
-      // Call the appropriate registration endpoint which will send verification email
       const endpoint = `/api/${formData.role.toLowerCase()}/register`;
       const registrationData = {
         username: formData.username,
@@ -146,6 +145,15 @@ const EnhancedRegister = ({ warehouseId }) => {
       });
 
       if (response.ok) {
+        // For warehouse farmer, skip verification and redirect
+        if (formData.role === 'FARMER' && warehouseId) {
+          setSuccess(`Registration successful!`);
+          setError('');
+          setTimeout(() => {
+            navigate('/login');
+          }, 2000);
+          return;
+        }
         const responseData = await response.json();
         if (responseData.requiresVerification) {
           setSuccess(`Registration initiated! Please check your email for verification code`);
@@ -162,7 +170,6 @@ const EnhancedRegister = ({ warehouseId }) => {
         const errorMsg = await response.text();
         throw new Error(errorMsg || 'Failed to initiate registration');
       }
-      
     } catch (error) {
       console.error('Registration initiation error:', error);
       throw error;
@@ -223,12 +230,14 @@ const EnhancedRegister = ({ warehouseId }) => {
     }
 
     try {
-      // Send verification code and move to step 2
       await sendVerificationCode();
-      setStep(2);
+      // Only go to step 2 if not FARMER in warehouse
+      if (!(formData.role === 'FARMER' && warehouseId) && formData.role !== 'FARMER') {
+        setStep(2);
+      }
     } catch (err) {
       // Display the actual error message from the backend with helpful suggestions
-      let errorMessage = err.message || 'Failed to send verification code. Please try again.';
+      let errorMessage = err.message || 'Failed to register. Please try again.';
       
       // Make email duplicate errors more user-friendly
       if (errorMessage.includes('Email already registered')) {

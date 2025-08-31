@@ -6,6 +6,7 @@ import DashboardLayout from '../layout/DashboardLayout';
 import ProfileSettings from '../user/ProfileSettings';
 import YieldPrediction from '../prediction/YieldPrediction';
 import { ROUTES } from '../../constants/routes';
+import AddToCartButton from '../common/AddToCartButton';
 
 const BuyerDashboard = () => {
   const { user, getAuthHeaders } = useAuth();
@@ -402,9 +403,11 @@ const BuyerDashboard = () => {
                           <p className="text-sm text-gray-600 mb-4">By {product.farmerName}</p>
                           <div className="flex justify-between items-center">
                             <span className="font-bold text-xl text-gray-900">LKR {product.price}</span>
-                            <button className="bg-green-600 text-white px-4 py-2 rounded-xl text-sm hover:bg-green-700 transition-colors duration-200 font-medium">
-                              Add to Cart
-                            </button>
+                            <AddToCartButton 
+                              productId={String(product.id)}
+                              productName={product.name}
+                              size="small"
+                            />
                           </div>
                         </div>
                       </div>

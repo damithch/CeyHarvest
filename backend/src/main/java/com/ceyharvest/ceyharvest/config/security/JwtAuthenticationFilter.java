@@ -15,6 +15,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -25,6 +27,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, 
                                     FilterChain filterChain) throws ServletException, IOException {
+        System.out.println("[DEBUG] JwtAuthenticationFilter: Path = " + request.getServletPath());
+        System.out.println("[DEBUG] JwtAuthenticationFilter: Authorization header = " + request.getHeader("Authorization"));
         
         final String requestTokenHeader = request.getHeader("Authorization");
         
@@ -32,6 +36,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String jwtToken = null;
         String role = null;
         String userId = null;
+        List<String> authorities = null;
 
         // JWT Token is in the form "Bearer token". Remove Bearer word and get only the Token
         if (requestTokenHeader != null && requestTokenHeader.startsWith("Bearer ")) {
@@ -40,26 +45,41 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 email = jwtTokenUtil.extractEmail(jwtToken);
                 role = jwtTokenUtil.extractRole(jwtToken);
                 userId = jwtTokenUtil.extractUserId(jwtToken);
+                // Extract authorities claim as a List<String>
+                Object authClaim = jwtTokenUtil.extractClaim(jwtToken, claims -> claims.get("authorities"));
+                if (authClaim instanceof List<?>) {
+                    authorities = ((List<?>) authClaim).stream()
+                        .filter(String.class::isInstance)
+                        .map(String.class::cast)
+                        .collect(Collectors.toList());
+                }
+                System.out.println("[DEBUG] JwtAuthenticationFilter: Token parsed successfully");
+                System.out.println("[DEBUG] JwtAuthenticationFilter: email = " + email);
+                System.out.println("[DEBUG] JwtAuthenticationFilter: Existing authentication = " + SecurityContextHolder.getContext().getAuthentication());
             } catch (Exception e) {
+                System.out.println("[DEBUG] JwtAuthenticationFilter: Exception during token parsing: " + e.getMessage());
                 logger.warn("JWT Token has expired or is invalid");
             }
         }
 
-        // Validate token and set authentication
-        if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            if (jwtTokenUtil.isValidToken(jwtToken)) {
+        // Validate token and set authentication (allow if email is null, e.g., warehouse login)
+        if (SecurityContextHolder.getContext().getAuthentication() == null) {
+            boolean valid = jwtTokenUtil.isValidToken(jwtToken);
+            System.out.println("[DEBUG] JwtAuthenticationFilter: isValidToken = " + valid);
+            if (valid) {
+                String principal = (email != null) ? email : userId; // fallback to userId if email is null
+                List<SimpleGrantedAuthority> grantedAuthorities = authorities != null
+                    ? authorities.stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList())
+                    : Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role));
                 UsernamePasswordAuthenticationToken authToken = 
                     new UsernamePasswordAuthenticationToken(
-                        email, null, Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role)));
-                
+                        principal, null, grantedAuthorities);
                 // Add user details to authentication
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                
                 // Set user ID in request attributes for controller access
                 request.setAttribute("userId", userId);
                 request.setAttribute("userRole", role);
                 request.setAttribute("userEmail", email);
-                
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }
         }

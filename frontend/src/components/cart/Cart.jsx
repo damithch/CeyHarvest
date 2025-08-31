@@ -3,139 +3,58 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import DashboardLayout from '../layout/DashboardLayout';
 import { ROUTES } from '../../constants/routes';
+import { useCart } from '../../hooks/useCart';
 
 const Cart = () => {
   const [cartItems, setCartItems] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const { token } = useAuth();
   const navigate = useNavigate();
+  const { 
+    getCartItems, 
+    updateCartItem, 
+    removeFromCart, 
+    clearCart, 
+    loading, 
+    error 
+  } = useCart();
 
   // Load cart items on component mount
   useEffect(() => {
     if (token) {
-      fetchCartItems();
-    } else {
-      setLoading(false);
-      setError('Authentication required');
+      loadCartItems();
     }
   }, [token]);
 
-  const fetchCartItems = async () => {
-    try {
-      setLoading(true);
-      setError('');
-      
-      if (!token) {
-        setError('No authentication token found');
-        setLoading(false);
-        return;
-      }
-
-      const response = await fetch('/api/buyer/cart', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setCartItems(Array.isArray(data.items) ? data.items : []);
-      } else {
-        if (response.status === 0 || !response.status) {
-          setError('Backend server is not running. Please start the backend server.');
-        } else {
-          const errorText = await response.text();
-          setError(`Failed to load cart items: ${response.status} ${errorText}`);
-        }
-      }
-    } catch (err) {
-      console.error('Cart fetch error:', err);
-      if (err.name === 'TypeError' && err.message.includes('fetch')) {
-        setError('Cannot connect to backend server. Please ensure the backend is running on port 8080.');
-      } else {
-        setError('Error loading cart: ' + (err.message || 'Unknown error'));
-      }
-    } finally {
-      setLoading(false);
-    }
+  const loadCartItems = async () => {
+    const items = await getCartItems();
+    setCartItems(items);
   };
 
-  const updateQuantity = async (productId, newQuantity) => {
+
+
+  const handleUpdateQuantity = async (productId, newQuantity) => {
     if (newQuantity < 1) {
-      removeFromCart(productId);
+      handleRemoveFromCart(productId);
       return;
     }
 
-    try {
-      const response = await fetch('/api/buyer/cart/update', {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          productId,
-          quantity: newQuantity
-        })
-      });
-
-      if (response.ok) {
-        fetchCartItems(); // Refresh cart
-      } else {
-        if (response.status === 0 || !response.status) {
-          setError('Backend server is not running. Cannot update cart.');
-        } else {
-          setError('Failed to update quantity');
-        }
-      }
-    } catch (err) {
-      if (err.name === 'TypeError' && err.message.includes('fetch')) {
-        setError('Cannot connect to backend server to update cart.');
-      } else {
-        setError('Error updating quantity: ' + err.message);
-      }
+    const success = await updateCartItem(productId, newQuantity);
+    if (success) {
+      loadCartItems(); // Refresh cart
     }
   };
 
-  const removeFromCart = async (productId) => {
-    try {
-      const response = await fetch(`/api/buyer/cart/remove/${productId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        fetchCartItems(); // Refresh cart
-      } else {
-        setError('Failed to remove item');
-      }
-    } catch (err) {
-      setError('Error removing item: ' + err.message);
+  const handleRemoveFromCart = async (productId) => {
+    const success = await removeFromCart(productId);
+    if (success) {
+      loadCartItems(); // Refresh cart
     }
   };
 
-  const clearCart = async () => {
-    try {
-      const response = await fetch('/api/buyer/cart/clear', {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        setCartItems([]);
-      } else {
-        setError('Failed to clear cart');
-      }
-    } catch (err) {
-      setError('Error clearing cart: ' + err.message);
+  const handleClearCart = async () => {
+    const success = await clearCart();
+    if (success) {
+      setCartItems([]);
     }
   };
 
@@ -170,7 +89,7 @@ const Cart = () => {
           <h1 className="text-3xl font-bold text-gray-800">Shopping Cart</h1>
           {cartItems.length > 0 && (
             <button
-              onClick={clearCart}
+              onClick={handleClearCart}
               className="px-4 py-2 text-red-600 border border-red-600 rounded hover:bg-red-50 transition-colors"
             >
               Clear Cart
@@ -270,7 +189,7 @@ const Cart = () => {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center space-x-2">
                           <button
-                            onClick={() => updateQuantity(item.productId, item.quantity - 1)}
+                            onClick={() => handleUpdateQuantity(item.productId, item.quantity - 1)}
                             className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300 transition-colors"
                           >
                             -
@@ -279,7 +198,7 @@ const Cart = () => {
                             {item.quantity}
                           </span>
                           <button
-                            onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                            onClick={() => handleUpdateQuantity(item.productId, item.quantity + 1)}
                             className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300 transition-colors"
                           >
                             +
@@ -291,7 +210,7 @@ const Cart = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <button
-                          onClick={() => removeFromCart(item.productId)}
+                          onClick={() => handleRemoveFromCart(item.productId)}
                           className="text-red-600 hover:text-red-800 text-sm font-medium"
                         >
                           Remove

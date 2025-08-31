@@ -8,5 +8,5 @@ import java.util.Optional;
 
 public interface ProductRepository extends MongoRepository<Product, String> {
     List<Product> findByFarmerId(String farmerId);
-    Optional<Product> findById(String id);
+    Optional<Product> findByFarmerIdAndProductName(String farmerId, String productName);
 }

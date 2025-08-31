@@ -40,6 +40,8 @@ public class AdminController {
     private DriverRepository driverRepository;
     @Autowired
     private WarehouseRepository warehouseRepository;
+    @Autowired
+    private ProductRepository productRepository;
 
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
@@ -327,6 +329,40 @@ public class AdminController {
     }
 
     /**
+     * Aggregate total stock per product across all warehouses
+     */
+    @GetMapping("/products/summary")
+    public ResponseEntity<?> getGlobalProductSummary() {
+        try {
+            List<Product> products = productRepository.findAll();
+            Map<String, Integer> totals = new HashMap<>();
+            Map<String, Double> latestPrices = new HashMap<>();
+
+            for (Product p : products) {
+                if (p.getProductName() == null) continue;
+                totals.merge(p.getProductName(), p.getTotalStock(), Integer::sum);
+                // Track a representative price (max latest price seen)
+                latestPrices.merge(p.getProductName(), p.getLatestPrice(), Math::max);
+            }
+
+            List<Map<String, Object>> summary = totals.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(e -> {
+                    Map<String, Object> m = new HashMap<>();
+                    m.put("productName", e.getKey());
+                    m.put("totalStock", e.getValue());
+                    m.put("latestPrice", latestPrices.getOrDefault(e.getKey(), 0.0));
+                    return m;
+                })
+                .toList();
+
+            return ResponseEntity.ok(summary);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error aggregating products: " + e.getMessage());
+        }
+    }
+
+    /**
      * Export users data as CSV
      */
     @GetMapping("/users/export")
@@ -421,6 +457,12 @@ public class AdminController {
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error registering warehouse: " + e.getMessage());
         }
+    }
+
+    // List all warehouses
+    @GetMapping("/warehouses")
+    public ResponseEntity<?> getAllWarehouses() {
+        return ResponseEntity.ok(warehouseRepository.findAll());
     }
 
     // Helper methods to convert entities to detailed maps

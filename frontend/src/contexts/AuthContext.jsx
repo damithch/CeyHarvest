@@ -19,21 +19,69 @@ export const AuthProvider = ({ children }) => {
     // Check if user is logged in on app start
     const checkAuth = () => {
       const storedToken = localStorage.getItem('token');
+      const combined = localStorage.getItem('user');
       const adminData = localStorage.getItem('admin');
       const farmerData = localStorage.getItem('farmer');
       const buyerData = localStorage.getItem('buyer');
 
-      if (storedToken) {
-        setToken(storedToken);
-      }
+      if (storedToken) setToken(storedToken);
 
-      if (adminData) {
-        setUser({ ...JSON.parse(adminData), role: 'ADMIN' });
-      } else if (farmerData) {
-        setUser({ ...JSON.parse(farmerData), role: 'FARMER' });
-      } else if (buyerData) {
-        setUser({ ...JSON.parse(buyerData), role: 'BUYER' });
+      // Prefer the combined 'user' payload if present
+      if (combined) {
+        try {
+          const parsed = JSON.parse(combined);
+          const normalizedRole = parsed.role?.startsWith('ROLE_') ? parsed.role.replace('ROLE_', '') : parsed.role;
+          if (parsed.token && !storedToken) setToken(parsed.token);
+          
+          // Handle different user data structures
+          if (parsed.user) {
+            // Structure: { role, user: {...}, token }
+            setUser({ ...parsed.user, role: normalizedRole });
+          } else if (normalizedRole === 'WAREHOUSE') {
+            // Handle warehouse user structure
+            setUser({ ...parsed, role: normalizedRole });
+          } else {
+            // Direct user object with role
+            setUser({ ...parsed, role: normalizedRole });
+          }
+        } catch (error) {
+          console.error('Error parsing combined user data:', error);
+          // Fallback to legacy keys if combined parsing fails
+          if (adminData) {
+            try {
+              setUser({ ...JSON.parse(adminData), role: 'ADMIN' });
+            } catch (e) {
+              console.error('Error parsing admin data:', e);
+            }
+          } else if (farmerData) {
+            try {
+              setUser({ ...JSON.parse(farmerData), role: 'FARMER' });
+            } catch (e) {
+              console.error('Error parsing farmer data:', e);
+            }
+          } else if (buyerData) {
+            try {
+              setUser({ ...JSON.parse(buyerData), role: 'BUYER' });
+            } catch (e) {
+              console.error('Error parsing buyer data:', e);
+            }
+          }
+        }
+      } else {
+        // Fallback to individual role-specific keys
+        try {
+          if (adminData) {
+            setUser({ ...JSON.parse(adminData), role: 'ADMIN' });
+          } else if (farmerData) {
+            setUser({ ...JSON.parse(farmerData), role: 'FARMER' });
+          } else if (buyerData) {
+            setUser({ ...JSON.parse(buyerData), role: 'BUYER' });
+          }
+        } catch (error) {
+          console.error('Error parsing legacy user data:', error);
+        }
       }
+      
       setLoading(false);
     };
 
@@ -41,20 +89,29 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = (response, role) => {
+    // Normalize role (strip ROLE_ prefix if present)
+    let normalizedRole = role;
+    if (role && role.startsWith('ROLE_')) {
+      normalizedRole = role.replace('ROLE_', '');
+    }
+    
     const { token: jwtToken, user: userData } = response;
-    const userWithRole = { ...userData, role };
+    const userWithRole = { ...userData, role: normalizedRole };
+    
     setUser(userWithRole);
     setToken(jwtToken);
+    
     // Store JWT token and user data
     localStorage.setItem('token', jwtToken);
-    // Store the full response (role, user, token, etc.) for dashboard access
-    localStorage.setItem('user', JSON.stringify(response));
+    // Store the full response (role, user, token, etc.) for dashboard access, with normalized role
+    localStorage.setItem('user', JSON.stringify({ ...response, role: normalizedRole }));
   };
 
   const logout = () => {
     setUser(null);
     setToken(null);
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
     localStorage.removeItem('admin');
     localStorage.removeItem('farmer');
     localStorage.removeItem('buyer');
@@ -75,7 +132,8 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated: !!user && !!token,
     isAdmin: user?.role === 'ADMIN',
     isFarmer: user?.role === 'FARMER',
-    isBuyer: user?.role === 'BUYER'
+    isBuyer: user?.role === 'BUYER',
+    isWarehouse: user?.role === 'WAREHOUSE'
   };
 
   return (
