@@ -41,15 +41,19 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = (response, role) => {
+    // Normalize role (strip ROLE_ prefix if present)
+    let normalizedRole = role;
+    if (role && role.startsWith('ROLE_')) {
+      normalizedRole = role.replace('ROLE_', '');
+    }
     const { token: jwtToken, user: userData } = response;
-    const userWithRole = { ...userData, role };
-    
+    const userWithRole = { ...userData, role: normalizedRole };
     setUser(userWithRole);
     setToken(jwtToken);
-    
     // Store JWT token and user data
     localStorage.setItem('token', jwtToken);
-    localStorage.setItem(role.toLowerCase(), JSON.stringify(userData));
+    // Store the full response (role, user, token, etc.) for dashboard access, with normalized role
+    localStorage.setItem('user', JSON.stringify({ ...response, role: normalizedRole }));
   };
 
   const logout = () => {

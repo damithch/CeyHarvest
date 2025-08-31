@@ -13,12 +13,15 @@ import AdminDashboard from './components/dashboard/AdminDashboard';
 import FarmerDashboard from './components/dashboard/FarmerDashboard';
 import BuyerDashboard from './components/dashboard/BuyerDashboard';
 import DriverDashboard from './components/dashboard/DriverDashboard';
+import WarehouseDashboard from './components/dashboard/WarehouseDashboard';
 import ProfileSettings from './components/user/ProfileSettings';
+import FarmerDetails from './components/dashboard/FarmerDetails';
+import Marketplace from './components/marketplace/Marketplace';
 import Cart from './components/cart/Cart';
 import Checkout from './components/checkout/Checkout';
-import Marketplace from './components/marketplace/Marketplace';
 import Orders from './components/orders/Orders';
 import CropFeed from './components/social/CropFeed';
+import ExpiredProductNotifications from './components/products/ExpiredProductNotifications';
 import { ROUTES, getRoleDashboard } from './constants/routes';
 
 const Dashboard = () => {
@@ -164,6 +167,14 @@ function App() {
             } 
           />
           <Route 
+            path={ROUTES.FARMER.EXPIRED_PRODUCTS}
+            element={
+              <ProtectedRoute allowedRoles={['FARMER']}>
+                <ExpiredProductNotifications />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
             path={ROUTES.DRIVER.DASHBOARD}
             element={
               <ProtectedRoute allowedRoles={['DRIVER']}>
@@ -172,9 +183,25 @@ function App() {
             } 
           />
           <Route 
-            path={ROUTES.DRIVER.PROFILE}
+            path={ROUTES.WAREHOUSE.DASHBOARD}
             element={
-              <ProtectedRoute allowedRoles={['DRIVER']}>
+              <ProtectedRoute allowedRoles={['WAREHOUSE']}>
+                <WarehouseDashboard />
+              </ProtectedRoute>
+            } 
+          />
+          <Route
+            path="/warehouse/farmer/:farmerId"
+            element={
+              <ProtectedRoute allowedRoles={['WAREHOUSE']}>
+                <FarmerDetails />
+              </ProtectedRoute>
+            }
+          />
+          <Route 
+            path={ROUTES.WAREHOUSE.PROFILE}
+            element={
+              <ProtectedRoute allowedRoles={['WAREHOUSE']}>
                 <ProfileSettings />
               </ProtectedRoute>
             } 
@@ -188,6 +215,9 @@ function App() {
             } 
           />
           
+          {/* Public Marketplace route for everyone */}
+          <Route path="/marketplace" element={<Marketplace />} />
+
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Router>

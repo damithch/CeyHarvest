@@ -29,6 +29,7 @@ public class JwtTokenUtil {
         Map<String, Object> claims = new HashMap<>();
         claims.put("role", role);
         claims.put("userId", userId);
+        claims.put("authorities", java.util.List.of(role));
         return createToken(claims, email);
     }
 

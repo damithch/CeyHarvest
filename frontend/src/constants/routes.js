@@ -37,6 +37,7 @@ export const ROUTES = {
     PRODUCTS: '/farmer/products',
     ORDERS: '/farmer/orders',
     CROP_FEED: '/farmer/crop-feed',
+    EXPIRED_PRODUCTS: '/farmer/expired-products',
   },
 
   // Driver routes
@@ -44,6 +45,12 @@ export const ROUTES = {
     DASHBOARD: '/driver/dashboard',
     PROFILE: '/driver/profile',
     DELIVERIES: '/driver/deliveries',
+  },
+
+  // Warehouse routes
+  WAREHOUSE: {
+    DASHBOARD: '/warehouse/dashboard',
+    PROFILE: '/warehouse/profile',
   },
 };
 
@@ -58,6 +65,8 @@ export const getRoleDashboard = (role) => {
       return ROUTES.FARMER.DASHBOARD;
     case 'DRIVER':
       return ROUTES.DRIVER.DASHBOARD;
+    case 'WAREHOUSE':
+      return ROUTES.WAREHOUSE.DASHBOARD;
     default:
       return ROUTES.LOGIN;
   }
@@ -74,6 +83,8 @@ export const getRoleProfile = (role) => {
       return ROUTES.FARMER.PROFILE;
     case 'DRIVER':
       return ROUTES.DRIVER.PROFILE;
+    case 'WAREHOUSE':
+      return ROUTES.WAREHOUSE.PROFILE;
     default:
       return ROUTES.PROFILE;
   }

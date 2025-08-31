@@ -108,6 +108,13 @@ public class UserAuthController {
             if (dto.getPostalCode() != null && !dto.getPostalCode().isEmpty()) {
                 farmer.setPostalCode(dto.getPostalCode());
             }
+            // Associate farmer with warehouse if warehouseId is provided
+            if (dto.getWarehouseId() != null && !dto.getWarehouseId().isEmpty()) {
+                if (farmer.getWarehouseIds() == null) {
+                    farmer.setWarehouseIds(new java.util.ArrayList<>());
+                }
+                farmer.getWarehouseIds().add(dto.getWarehouseId());
+            }
             
             // Send verification email instead of saving directly
             boolean emailSent = emailVerificationService.sendVerificationCode(dto.getEmail(), "FARMER", farmer);
