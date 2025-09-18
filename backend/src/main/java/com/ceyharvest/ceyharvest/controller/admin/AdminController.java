@@ -343,6 +343,8 @@ public class AdminController {
                     .map(this::convertBuyerToDetailedMap)
                     .collect(Collectors.toList()));
             }
+
+            
             
             if (userType == null || userType.equals("DRIVER")) {
                 List<Driver> drivers = driverRepository.findAll();
